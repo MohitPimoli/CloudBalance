@@ -32,7 +32,3 @@ This project is a full-stack web application designed to help users onboard thei
 - `frontend/`: React app
 - `backend/`: Spring Boot app
 - `src/main/resources/keys/`: Private and public keys (ignored in version control)
-
----
-
-Feel free to update this as the project grows!
