@@ -39,7 +39,6 @@ public class SnowflakeRepository {
             String date = null;
             for (int i = 1; i <= columnCount; i++) {
                 String columnLabel = metaData.getColumnLabel(i);
-                log.info("Column {}: {}", columnLabel, rs.getString(i));
                 if (groupBy.equalsIgnoreCase(columnLabel)) {
                     columnName = rs.getString(i);
                 } else if ("TOTAL_USAGE_COST".equalsIgnoreCase(columnLabel)) {

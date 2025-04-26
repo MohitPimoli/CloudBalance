@@ -25,7 +25,7 @@ public class CostExplorerResponseDTO {
     @AllArgsConstructor
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class CostExplorerData {
-        private String columnName;
+        private String groupBy;
         private Double cost;
         private String date;
     }

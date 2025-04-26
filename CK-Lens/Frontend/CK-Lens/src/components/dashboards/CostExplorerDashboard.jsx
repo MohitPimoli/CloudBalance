@@ -5,7 +5,7 @@ import AwsAccountSelect from "../utils/AwsAccountSelect";
 import CostExplorerLayout from "../../layout/CostExplorerLayout";
 
 const CostExplorerDashboard = () => {
-  const [selectedAccount, setSelectedAccount] = useState(true); ///update on prod set to empty from true
+  const [selectedAccount, setSelectedAccount] = useState();
 
   return (
     <Box sx={{ mt: 8, ml: 10, pr: 8 }}>
@@ -63,7 +63,11 @@ const CostExplorerDashboard = () => {
         }}
       />
       <Box>{/* child component land here */}</Box>
-      {!!selectedAccount ? <CostExplorerLayout /> : <></>}
+      {!!selectedAccount ? (
+        <CostExplorerLayout selectedAccount={selectedAccount} />
+      ) : (
+        <></>
+      )}
     </Box>
   );
 };

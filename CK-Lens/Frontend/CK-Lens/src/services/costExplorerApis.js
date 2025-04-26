@@ -13,12 +13,8 @@ export const fetchDisplayNames = async () => {
     return response.data;
 };
 
-export const fetchData = async (payload) => {
+export const fetchCostData = async (payload) => {
     const response = await api.post("/cost/data", payload);
+    console.log("response.data = ", response.data);
     return response.data;
-};
-
-const fetchCostData = async (payload) => {
-    const response = await axios.post("/cost/data", payload);
-    return response.data.data;
 };

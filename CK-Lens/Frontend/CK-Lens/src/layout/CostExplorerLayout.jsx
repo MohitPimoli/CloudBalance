@@ -11,11 +11,11 @@ import {
 import { ChevronDown, SlidersHorizontal } from "lucide-react";
 import CostExplorerDataWrapper from "../components/utils/CostExplorerDataWrapper";
 import { useQuery } from "@tanstack/react-query";
-import { fetchDisplayNames } from "../services/costExplorer";
+import { fetchDisplayNames } from "../services/costExplorerApis";
 
-const CostExplorerLayout = () => {
+const CostExplorerLayout = ({ selectedAccount }) => {
   const [toggleFilter, setToggleFilter] = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState("");
+  const [selectedGroup, setSelectedGroup] = useState(null);
   const [orderedGroups, setOrderedGroups] = useState([]);
 
   const { data: displayNames = [], isLoading } = useQuery({
@@ -26,6 +26,9 @@ const CostExplorerLayout = () => {
   useEffect(() => {
     if (displayNames.length > 0 && orderedGroups.length === 0) {
       setOrderedGroups(displayNames);
+      if (displayNames[0]) {
+        setSelectedGroup(displayNames[0]);
+      }
     }
   }, [displayNames, orderedGroups]);
 
@@ -35,8 +38,15 @@ const CostExplorerLayout = () => {
       const rest = prev.filter((g) => g.displayName !== selectedDisplayName);
       return [selected, ...rest];
     });
-    setSelectedGroup(selectedDisplayName);
+
+    const selected = displayNames.find(
+      (g) => g.displayName === selectedDisplayName
+    );
+    if (selected) {
+      setSelectedGroup(selected);
+    }
   };
+
   const visibleGroups = orderedGroups.slice(0, 6);
   const moreGroups = orderedGroups.slice(6);
 
@@ -48,7 +58,6 @@ const CostExplorerLayout = () => {
     updateOrderWithSelected(selected.displayName);
   };
 
-  console.log("Selected:->", selectedGroup);
   return (
     <Box sx={{ p: 2 }}>
       <Box
@@ -151,7 +160,8 @@ const CostExplorerLayout = () => {
         }}
       >
         <CostExplorerDataWrapper
-          selectedOption={selectedGroup}
+          selectedAccount={selectedAccount}
+          selectedOption={selectedGroup?.fieldName}
           toggleFilter={toggleFilter}
           filters={displayNames}
         />
