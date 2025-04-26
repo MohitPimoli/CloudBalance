@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 @Builder
 @Entity
 @Data
+@Table(name = "black_listed_token")
 public class BlackListedToken {
 
     @Id
@@ -17,8 +18,10 @@ public class BlackListedToken {
     @Column(length = 512, nullable = false, unique = true)
     private String token;
 
+    @Column(name="blacklisted_at")
     private LocalDateTime blacklistedAt;
 
+    @Column(name="token_expiry")
     private LocalDateTime tokenExpiry;
 
     @PrePersist

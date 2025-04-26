@@ -582,6 +582,7 @@ const config = {
             error: false,
             helperText: " ",
             prompt: "This field is required",
+            regex: /\b(?:us|af|ap|ca|eu|il|me|sa|cn|mx)(?:-(?:north|south|east|west|central|northeast|southeast))+-(?:\d+)\b/,
             options: [
                 { value: "us-east-1", label: "US East (N. Virginia)" },
                 { value: "us-east-2", label: "US East (Ohio)" },

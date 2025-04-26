@@ -1,34 +1,43 @@
-//package com.cloudbalance.lens.controller;
-//
-//import com.cloudbalance.lens.dto.account.AccountResponse;
-//import com.cloudbalance.lens.dto.costexplorer.CostExplorerRequest;
-//import com.cloudbalance.lens.dto.costexplorer.CostExplorerResponse;
-//import com.cloudbalance.lens.service.costexplorer.CostExplorerService;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.http.ResponseEntity;
-//import org.springframework.security.access.prepost.PreAuthorize;
-//import org.springframework.web.bind.annotation.GetMapping;
-//import org.springframework.web.bind.annotation.RequestMapping;
-//import org.springframework.web.bind.annotation.RestController;
-//
-//@RestController
-//@RequestMapping("/cost-explorer")
-//public class CostExplorerController {
-//
-//    @Autowired
-//    private CostExplorerService costExplorerService;
-//
-//    @GetMapping("/linked-accounts")
-//    @PreAuthorize("isAuthenticated()")
-//    public ResponseEntity<AccountResponse> linkedAccounts() {
-//        AccountResponse response = costExplorerService.linkedAccounts();
-//        System.out.println("Response: " + response);
-//        return ResponseEntity.ok(response);
-//    }
-//    @GetMapping("/linked-account")
-//    @PreAuthorize("isAuthenticated()")
-//    public ResponseEntity<CostExplorerResponse> getAccountCostDetail(CostExplorerRequest costExplorerRequest) {
-//        CostExplorerResponse costExplorerResponse = costExplorerService.getAccountCostDetail(costExplorerRequest);
-//        return ResponseEntity.ok(costExplorerResponse);
-//    }
-//}
+package com.cloudbalance.lens.controller;
+
+import com.cloudbalance.lens.dto.costexplorer.CostExplorerRequestDTO;
+import com.cloudbalance.lens.dto.costexplorer.CostExplorerResponseDTO;
+import com.cloudbalance.lens.dto.costexplorer.DisplayNameDTO;
+import com.cloudbalance.lens.service.costexplorer.CostExplorerService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+
+@Slf4j
+@RestController
+@RequestMapping("/cost")
+public class CostExplorerController {
+
+    @Autowired
+    private CostExplorerService costExplorerService;
+
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'READ-ONLY','CUSTOMER')")
+    @GetMapping("/filter")
+    public ResponseEntity<List<String>> getDistinctValues(@RequestParam("fieldName") String fieldName){   /// fetch Filter Values
+        List<String> values = costExplorerService.getFilter(fieldName);
+        return ResponseEntity.ok(values);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'READ-ONLY','CUSTOMER')")
+    @GetMapping("/display-names")
+    public ResponseEntity<List<DisplayNameDTO>> getDisplayName(){                                          /// fetch display name
+        List<DisplayNameDTO> displayName = costExplorerService.getDisplayName();
+        return ResponseEntity.ok(displayName);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'READ-ONLY','CUSTOMER')")                                           /// fetch data with or without filters
+    @PostMapping("/data")
+    public ResponseEntity<CostExplorerResponseDTO> getData(@RequestBody CostExplorerRequestDTO costExplorerRequestDTO) {
+        return ResponseEntity.ok(costExplorerService.fetchDate(costExplorerRequestDTO));
+    }
+
+}

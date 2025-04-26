@@ -12,6 +12,13 @@ const passwordPattern = {
 
 };
 
+const usernamePattern = {
+    value: /^[a-zA-Z0-9_@-]+$/,
+    message: 'Only letters, numbers, underscores (_), hyphens (-), and @ are allowed in username',
+};
+
+
+
 const FormConfig = (isEditMode) => [
     {
         name: 'firstName',
@@ -43,7 +50,7 @@ const FormConfig = (isEditMode) => [
         type: 'text',
         rules: {
             required: 'Username is required',
-            pattern: alphaNumPattern,
+            pattern: usernamePattern,
             minLength: {
                 value: 6,
                 message: 'Username must be at least 6 characters',

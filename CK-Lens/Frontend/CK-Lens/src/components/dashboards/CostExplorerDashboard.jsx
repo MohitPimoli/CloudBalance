@@ -1,8 +1,12 @@
-import React from "react";
-import { Box, Typography, Button, Stack } from "@mui/material";
+import React, { useState } from "react";
+import { Box, Typography, Stack } from "@mui/material";
 import { House } from "lucide-react";
+import AwsAccountSelect from "../utils/AwsAccountSelect";
+import CostExplorerLayout from "../../layout/CostExplorerLayout";
 
 const CostExplorerDashboard = () => {
+  const [selectedAccount, setSelectedAccount] = useState(true); ///update on prod set to empty from true
+
   return (
     <Box sx={{ mt: 8, ml: 10, pr: 8 }}>
       {/* Breadcrumb */}
@@ -32,12 +36,25 @@ const CostExplorerDashboard = () => {
         </Typography>
       </Stack>
       <Typography variant="h4">Cost Explorer</Typography>
-      <Typography
-        variant="body"
-        color="#1976d2"
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "row",
+          justifyContent: "space-between",
+        }}
       >
-        How to always aware of cost charges and history.
-      </Typography>
+        <Typography
+          variant="body"
+          color="#1976d2"
+        >
+          How to always aware of cost charges and history.
+        </Typography>
+        <AwsAccountSelect
+          selectedAccount={selectedAccount}
+          setSelectedAccount={setSelectedAccount}
+          label={"Select AWS Account"}
+        />
+      </Box>
       <Box
         sx={{
           width: "100%",
@@ -46,6 +63,7 @@ const CostExplorerDashboard = () => {
         }}
       />
       <Box>{/* child component land here */}</Box>
+      {!!selectedAccount ? <CostExplorerLayout /> : <></>}
     </Box>
   );
 };

@@ -2,6 +2,7 @@ package com.cloudbalance.lens.dto.usermanagement;
 
 import com.cloudbalance.lens.validation.OnCreate;
 import com.cloudbalance.lens.validation.OnUpdate;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -15,6 +16,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserDTO {
 
     private Long id;
@@ -42,11 +44,6 @@ public class UserDTO {
 
     @NotBlank(message = "Password is required", groups = OnCreate.class)
     @Size(min = 8, message = "Password must be at least 8 characters long", groups = { OnCreate.class, OnUpdate.class })
-    @Pattern(
-            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
-            message = "Password must include uppercase, lowercase, number, and special character",
-            groups = { OnCreate.class, OnUpdate.class }
-    )
     private String password;
 
     @NotBlank(message = "Role name is required", groups = OnCreate.class)

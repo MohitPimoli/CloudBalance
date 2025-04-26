@@ -25,7 +25,7 @@ const imageMap = {
 
 const Step2IAMPolicies = () => {
   const [copyTooltip, setCopyTooltip] = useState("Copy to clipboard");
-  const step = onboardingFormConfig;
+  const step = onboardingFormConfig.step2;
 
   const handleCopy = (value) => {
     navigator.clipboard.writeText(value).then(() => {

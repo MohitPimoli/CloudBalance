@@ -15,6 +15,7 @@ import ASG from "../awsservices/ASG";
 import { House } from "lucide-react";
 import { useSelector } from "react-redux";
 import { fetchAccounts } from "../../services/awsServiceApis";
+import AwsAccountSelect from "../utils/AwsAccountSelect";
 
 const AWSServiceWrapper = () => {
   const [selectedService, setSelectedService] = useState("EC2");
@@ -22,7 +23,6 @@ const AWSServiceWrapper = () => {
   const navigate = useNavigate();
   const user = useSelector((state) => state.auth.user);
   const id = user?.id;
-
 
   const { data: accounts = [], isLoading } = useQuery({
     queryKey: ["accounts", id],
@@ -118,32 +118,19 @@ const AWSServiceWrapper = () => {
           </Button>
         </Stack>
 
-        <Box minWidth={250}>
-          <Autocomplete
-            options={accounts}
-            getOptionLabel={(option) =>
-              `${option.accountHolderName} (${option.accountNumber})`
-            }
-            value={
-              accounts.find((acc) => acc.accountNumber === selectedAccount) ||
-              null
-            }
-            onChange={(event, newValue) =>
-              setSelectedAccount(newValue?.accountNumber || "")
-            }
-            loading={isLoading}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Select AWS Account"
-                size="small"
-              />
-            )}
-            disableClearable
-            fullWidth
-          />
-        </Box>
+        <AwsAccountSelect
+          selectedAccount={selectedAccount}
+          setSelectedAccount={setSelectedAccount}
+          label={"Select AWS Account"}
+        />
       </Stack>
+      <Box
+        sx={{
+          width: "100%",
+          borderBottom: "1px solid lightgray",
+          mt: 1,
+        }}
+      />
 
       {!!selectedAccount ? renderComponent(selectedAccount) : <></>}
     </Box>

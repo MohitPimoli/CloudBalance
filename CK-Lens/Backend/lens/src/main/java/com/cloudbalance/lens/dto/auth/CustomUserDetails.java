@@ -10,6 +10,7 @@ import java.util.Collections;
 
 @Data
 @Builder
+
 public class CustomUserDetails implements UserDetails {
 
     private final String username;

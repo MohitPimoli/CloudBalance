@@ -43,6 +43,8 @@ dependencies {
 	implementation 'software.amazon.awssdk:rds:2.31.13'
 	implementation 'software.amazon.awssdk:ec2:2.31.13'
 	implementation 'software.amazon.awssdk:autoscaling:2.31.13'
+	implementation 'net.snowflake:snowflake-jdbc:3.23.1'
+	implementation 'org.yaml:snakeyaml:2.0'
 }
 
 tasks.named('test') {

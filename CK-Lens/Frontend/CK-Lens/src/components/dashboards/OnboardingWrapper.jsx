@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Box } from "@mui/material";
-import api from "../../api/axios";
 import ThankYouPage from "../../page/ThankYouPage";
 import config from "../../config/OnboardingCodeBoxConfig";
 import { Snackbar, Alert } from "@mui/material";
@@ -52,7 +51,6 @@ const OnboardingWrapper = () => {
     if (activeStep === steps.length - 1) {
       try {
         const response = await registerAWSAccount(formValues);
-        console.log("registerAWSAccountResponse", response);
         setIsSubmitted(true);
       } catch (err) {
         if (err?.status === 409) {

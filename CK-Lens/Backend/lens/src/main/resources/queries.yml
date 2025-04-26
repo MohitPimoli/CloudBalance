@@ -1,0 +1,7 @@
+queries:
+  getFilterValue: "SELECT DISTINCT %s FROM cost_explorer WHERE %s IS NOT NULL LIMIT 1000"
+  getColumnNames: "SELECT COLUMN_NAME FROM %s.INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '%s' AND TABLE_SCHEMA = '%s'"
+  databaseName: "AWS"
+  tableName: "COST_EXPLORER"
+  schemaName: "COST"
+  limit: 1000

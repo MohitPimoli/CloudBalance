@@ -116,13 +116,18 @@ public class UserManagementImpl implements UserManagementService {
         User user = userRepository.findById(userDTO.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userDTO.getId()));
 
+        log.debug("Encrypted password received: {}", userDTO.getPassword());
+
         if (userDTO.getFirstName() != null) user.setFirstname(userDTO.getFirstName());
         if (userDTO.getLastName() != null) user.setLastname(userDTO.getLastName());
         if (userDTO.getEmail() != null) user.setEmail(userDTO.getEmail());
+
         if (userDTO.getPassword() != null && !userDTO.getPassword().isBlank()) {
-            user.setPassword(PasswordEncoderUtil.encode(userDTO.getPassword()));
+            String decryptedPass = passwordDecryptorUtil.decryptPassword(userDTO.getPassword());
+            user.setPassword(PasswordEncoderUtil.encode(decryptedPass));
             log.info("Password updated for user ID {}", user.getId());
         }
+
         if (userDTO.getRoleName() != null) {
             Role newRole = getRole(userDTO);
             user.setRole(newRole);

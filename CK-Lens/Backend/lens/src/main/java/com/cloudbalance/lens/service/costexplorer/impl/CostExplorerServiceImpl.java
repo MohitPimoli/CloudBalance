@@ -1,81 +1,111 @@
-//package com.cloudbalance.lens.service.costexplorer.impl;
-//
-//import com.cloudbalance.lens.dto.auth.CustomUserDetails;
-//import com.cloudbalance.lens.dto.costexplorer.CostExplorerRequest;
-//import com.cloudbalance.lens.dto.costexplorer.CostExplorerResponse;
-//import com.cloudbalance.lens.entity.Account;
-//import com.cloudbalance.lens.dto.account.AccountResponse;
-//import com.cloudbalance.lens.entity.User;
-//import com.cloudbalance.lens.entity.UserCloudAccount;
-//import com.cloudbalance.lens.exception.ResourceNotFoundException;
-//import com.cloudbalance.lens.exception.UnauthorizedException;
-//import com.cloudbalance.lens.repository.UserRepository;
-//import com.cloudbalance.lens.service.costexplorer.CostExplorerService;
-//import lombok.extern.slf4j.Slf4j;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.security.core.Authentication;
-//import org.springframework.security.core.context.SecurityContextHolder;
-//import org.springframework.stereotype.Service;
-//import java.util.List;
-//
-//@Slf4j
-//@Service
-//public class CostExplorerServiceImpl implements CostExplorerService {
-//
-//    @Autowired
-//    private UserRepository userRepository;
-//    @Autowired
-//    private AccountToAccountResponse accountToAccountResponse;
-//
-//
-//    @Override
-//    public AccountResponse linkedAccounts() {
-//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//
-//        if (authentication == null || !authentication.isAuthenticated()) {
-//            log.warn("Unauthenticated access attempt to linked accounts");
-//            throw new UnauthorizedException("User is not authenticated");
-//        }
-//
-//        Object principal = authentication.getPrincipal();
-//        if (!(principal instanceof CustomUserDetails customUserDetails)) {
-//            log.error("Authentication principal is not of expected type: {}", principal.getClass().getName());
-//            throw new UnauthorizedException("Invalid authentication principal");
-//        }
-//
-//        String username = customUserDetails.getUsername();
-//        if (username == null) {
-//            log.error("Authenticated user has null username");
-//            throw new UnauthorizedException("Invalid user credentials");
-//        }
-//
-//        log.info("Fetching linked accounts for user: {}", username);
-//
-//        User user = userRepository.findByUsername(username)
-//                .orElseThrow(() -> {
-//                    log.error("User not found in database: {}", username);
-//                    return new ResourceNotFoundException("User not found");
-//                });
-//
-//        List<UserCloudAccount> assignedAccounts = user.getAssignedAccounts();
-//        if (assignedAccounts == null || assignedAccounts.isEmpty()) {
-//            log.warn("User {} has no assigned cloud accounts", username);
-//            return AccountResponse.builder()
-//                    .linkedAccounts(List.of())
-//                    .message("No linked accounts found.")
-//                    .build();
-//        }
-//
-//        List<Account> linkedAccounts = assignedAccounts.stream()
-//                .map(UserCloudAccount::getCloudAccount)
-//                .toList();
-//
-//        return accountToAccountResponse.toResponse(linkedAccounts);
-//    }
-//
-//    @Override
-//    public CostExplorerResponse getAccountCostDetail(CostExplorerRequest costExplorerRequest) {
-//        // TODO: Implement logic here later
-//        return null;
-//    }
-//}
+package com.cloudbalance.lens.service.costexplorer.impl;
+
+import com.cloudbalance.lens.dto.costexplorer.ColumnFilterDTO;
+import com.cloudbalance.lens.dto.costexplorer.CostExplorerRequestDTO;
+import com.cloudbalance.lens.dto.costexplorer.CostExplorerResponseDTO;
+import com.cloudbalance.lens.dto.costexplorer.DisplayNameDTO;
+import com.cloudbalance.lens.entity.ColumnName;
+import com.cloudbalance.lens.exception.BadRequestException;
+import com.cloudbalance.lens.exception.ResourceNotFoundException;
+import com.cloudbalance.lens.repository.AccountRepository;
+import com.cloudbalance.lens.repository.ColumnNameRepository;
+import com.cloudbalance.lens.service.costexplorer.CostExplorerService;
+import com.cloudbalance.lens.utils.SnowflakeRepository;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.List;
+
+
+@Service
+@Slf4j
+public class CostExplorerServiceImpl implements CostExplorerService {
+
+    @Autowired
+    private SnowflakeRepository snowflakeRepository;
+    @Autowired
+    private ColumnNameRepository columnNameRepository;
+    @Autowired
+    private AccountRepository accountRepository;
+
+    @Override
+    public List<DisplayNameDTO> getDisplayName() {
+        return columnNameRepository.getAllDisplayName();
+    }
+
+    @Override
+    public List<String> getFilter(String fieldName) {
+
+        if (!fieldName.matches("^[a-zA-Z_-][a-zA-Z0-9_-]*$")) {
+            throw new IllegalArgumentException("Invalid column name format");
+        }
+        ColumnName columnName = columnNameRepository.findByFieldName(fieldName)
+                .orElseThrow(() -> new ResourceNotFoundException("Column Name not found for FieldName: " + fieldName));
+        return snowflakeRepository.getFilter(columnName.getColumnName());
+    }
+
+    @Override
+    public CostExplorerResponseDTO fetchDate(CostExplorerRequestDTO costExplorerRequestDTO) {
+        accountRepository.findByAccountNumber(Long.valueOf(costExplorerRequestDTO.getAccountId()))
+                .orElseThrow(() -> {
+                    log.warn("Account not found with account number: {}", costExplorerRequestDTO.getAccountId());
+                    return new ResourceNotFoundException("Account not found with AccountNumber: " + costExplorerRequestDTO.getAccountId());
+                });
+
+        ColumnName columnName = columnNameRepository.findByFieldName(costExplorerRequestDTO.getGroupBy())
+                .orElseThrow(() -> {
+                    log.warn("Column not found for field name {}", costExplorerRequestDTO.getGroupBy());
+                    return new ResourceNotFoundException("Column not found for field name: " + costExplorerRequestDTO.getGroupBy());
+                });
+
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
+        try {
+            if (costExplorerRequestDTO.getStartDate() != null && !costExplorerRequestDTO.getStartDate().trim().isEmpty()) {
+                LocalDate.parse(costExplorerRequestDTO.getStartDate(), formatter);
+            }
+
+            if (costExplorerRequestDTO.getEndDate() != null && !costExplorerRequestDTO.getEndDate().trim().isEmpty()) {
+                LocalDate.parse(costExplorerRequestDTO.getEndDate(), formatter);
+            }
+        } catch (DateTimeParseException ex) {
+            throw new BadRequestException("Invalid date format. Expected format is YYYY-MM-DD");
+        }
+
+        if (costExplorerRequestDTO.getFilterDTO() != null && costExplorerRequestDTO.getFilterDTO().getFilters() != null) {
+            if (!costExplorerRequestDTO.getFilterDTO().getFilters().isEmpty()) {
+                for (ColumnFilterDTO.ColumnFilter filter : costExplorerRequestDTO.getFilterDTO().getFilters()) {
+                    if (filter.getFilterValues() == null || filter.getFilterValues().isEmpty()) {
+                        throw new BadRequestException("Filter values cannot be empty for column: " + filter.getColumnName());
+                    }
+                }
+            }
+        }
+
+        List<CostExplorerResponseDTO.CostExplorerData> data = snowflakeRepository.getData(
+                costExplorerRequestDTO.getAccountId(),
+                columnName.getColumnName(),
+                costExplorerRequestDTO.getStartDate(),
+                costExplorerRequestDTO.getEndDate(),
+                costExplorerRequestDTO.getFilterDTO()
+        );
+
+        return CostExplorerResponseDTO.builder()
+                .data(data)
+                .groupBy(costExplorerRequestDTO.getGroupBy())
+                .startDate(costExplorerRequestDTO.getStartDate())
+                .endDate(costExplorerRequestDTO.getEndDate())
+                .accountId(costExplorerRequestDTO.getAccountId())
+                .message("Success")
+                .build();
+    }
+
+}
+
+
+
+
+
+
