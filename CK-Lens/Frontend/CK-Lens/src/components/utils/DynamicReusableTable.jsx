@@ -43,12 +43,12 @@ const DynamicReusableTable = ({
   onRowClick,
   headBgColor = "#1e3a8a",
   headTextColor = "white",
+  footerData = null,
 }) => {
   const [filters, setFilters] = useState({});
   const [filterVisible, setFilterVisible] = useState({});
   const [autoOpenFilterKey, setAutoOpenFilterKey] = useState(null);
   const dropdownRefs = useRef({});
-
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
@@ -250,6 +250,29 @@ const DynamicReusableTable = ({
             ))
           )}
         </TableBody>
+        {footerData && (
+          <tfoot>
+            <TableRow
+              sx={{
+                backgroundColor: headBgColor,
+              }}
+            >
+              {columns.map(({ key }, idx) => (
+                <TableCell key={key}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      fontWeight: "bold",
+                      color: headTextColor,
+                    }}
+                  >
+                    {footerData[key] !== undefined ? footerData[key] : ""}
+                  </Typography>
+                </TableCell>
+              ))}
+            </TableRow>
+          </tfoot>
+        )}
       </Table>
     </TableContainer>
   );

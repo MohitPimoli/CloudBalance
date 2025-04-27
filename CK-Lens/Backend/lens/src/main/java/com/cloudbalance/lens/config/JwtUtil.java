@@ -63,11 +63,10 @@ public class JwtUtil {
                 .setClaims(extraClaims)
                 .setSubject(customUserDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 10000 * 60 * 60))  // adjust as needed  // 250->15min // 10000->10hours
+                .setExpiration(new Date(System.currentTimeMillis() + 250 * 60 * 60))  // adjust as needed  // 250->15min // 10000->10hours
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
-
 
     private Key getSigningKey() {
         byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);

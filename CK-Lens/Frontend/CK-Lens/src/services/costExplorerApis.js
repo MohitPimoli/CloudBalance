@@ -15,6 +15,5 @@ export const fetchDisplayNames = async () => {
 
 export const fetchCostData = async (payload) => {
     const response = await api.post("/cost/data", payload);
-    console.log("response.data = ", response.data);
     return response.data;
 };

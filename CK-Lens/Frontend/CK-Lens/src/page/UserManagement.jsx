@@ -5,22 +5,18 @@ import EditIcon from "@mui/icons-material/Edit";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import AddIcon from "@mui/icons-material/Add";
 import { useSelector } from "react-redux";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import UserFilterToggle from "../components/utils/UserFilterToggle";
 import DynamicReusableTable from "../components/utils/DynamicReusableTable";
 import config from "../config/userManagementTableColumns";
 import { fetchUsers } from "../services/userManagementServiceApis";
 
 //import LoadingScreen from "../../LoadingScreen/LoadingScreen";
-
 const UserManagementDashboard = () => {
   const navigate = useNavigate();
   const [filter, setFilter] = useState("active");
   const open = useSelector((state) => state.sidebar.open);
-  const [hasNextPage, setHasNextPage] = useState(false);
-  const [page, setPage] = useState(0);
   const { dashboardPermissions } = useSelector((state) => state.auth);
-  const [rawUsers, setRawUsers] = useState([]);
   const columns = config.columns;
 
   const hasEditPermission = (permissions, dashboardName) => {
@@ -33,32 +29,30 @@ const UserManagementDashboard = () => {
 
   const canEdit = hasEditPermission(dashboardPermissions, "USER_MANAGEMENT");
 
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["users", page],
-    queryFn: () => fetchUsers(page),
-    keepPreviousData: true,
+  const {
+    data,
+    fetchNextPage,
+    isLoading,
+    hasNextPage,
+    isFetchingNextPage,
+    isError,
+    error,
+  } = useInfiniteQuery({
+    queryKey: ["users"],
+    queryFn: ({ pageParam = 0 }) => fetchUsers(pageParam),
+    getNextPageParam: (lastPage, allPages) => {
+      return lastPage.hasNextPage ? allPages.length : undefined;
+    },
   });
 
-  useEffect(() => {
-    if (data) {
-      setHasNextPage(data.hasNextPage);
-      setRawUsers((prev) => {
-        const existingIds = new Set(prev.map((u) => u.id));
-        const newUsers = data.users.filter((u) => !existingIds.has(u.id));
-        return page === 0 ? newUsers : [...prev, ...newUsers];
-      });
-    }
-  }, [data, page]);
+  const allUsers = data?.pages.flatMap((page) => page.users) || [];
 
   const filteredUsers =
-    filter === "active"
-      ? rawUsers.filter((user) => user.active === true)
-      : rawUsers;
+    filter === "active" ? allUsers.filter((user) => user.active) : allUsers;
 
   const handleFilterChange = (_event, newFilter) => {
     if (newFilter !== null) {
       setFilter(newFilter);
-      setPage(0);
     }
   };
 
@@ -69,8 +63,8 @@ const UserManagementDashboard = () => {
     const threshold = 100;
     const isNearBottom = scrollHeight - scrollTop - clientHeight < threshold;
 
-    if (isNearBottom && hasNextPage && !isLoading) {
-      setPage((prevPage) => prevPage + 1);
+    if (isNearBottom && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
     }
   };
 
@@ -78,7 +72,6 @@ const UserManagementDashboard = () => {
     if (key === "active") {
       return row.active ? "YES" : "NO";
     }
-
     if (key === "actions") {
       return (
         <IconButton
@@ -91,7 +84,6 @@ const UserManagementDashboard = () => {
         </IconButton>
       );
     }
-
     return row[key];
   };
 
@@ -132,7 +124,8 @@ const UserManagementDashboard = () => {
             Users
           </Typography>
         </Box>
-        {/* Actions Row */}
+
+        {/* Actions */}
         <Box
           display="flex"
           flexDirection={{ xs: "column", sm: "row" }}
@@ -153,9 +146,7 @@ const UserManagementDashboard = () => {
           <Button
             variant="outlined"
             startIcon={<FilterListIcon />}
-            onClick={() => {
-              setFilter("active");
-            }}
+            onClick={() => setFilter("active")}
           >
             Reset Filters
           </Button>
@@ -164,14 +155,14 @@ const UserManagementDashboard = () => {
             <UserFilterToggle
               filter={filter}
               onChange={handleFilterChange}
-              activeCount={rawUsers.filter((u) => u.active).length}
-              allCount={rawUsers.length}
+              activeCount={allUsers.filter((u) => u.active).length}
+              allCount={allUsers.length}
             />
           </Box>
         </Box>
-        {/* User Table */}
-        {isLoading && rawUsers.length === 0 ? (
-          // <LoadingScreen message="Fetching Users..." />
+
+        {/* Table */}
+        {isLoading && allUsers.length === 0 ? (
           <Typography>Fetching Users...</Typography>
         ) : isError ? (
           <Typography color="error">
@@ -181,8 +172,8 @@ const UserManagementDashboard = () => {
         ) : (
           <DynamicReusableTable
             columns={columns}
-            data={Array.isArray(filteredUsers) ? filteredUsers : []}
-            isLoading={isLoading && rawUsers.length === 0}
+            data={filteredUsers}
+            isLoading={isLoading && allUsers.length === 0}
             isError={isError}
             error={error}
             enableFilters
