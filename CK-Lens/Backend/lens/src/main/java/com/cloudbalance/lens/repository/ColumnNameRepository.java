@@ -12,10 +12,10 @@ import java.util.Optional;
 @Repository
 public interface ColumnNameRepository extends JpaRepository<ColumnName, String> {
 
-    @Query("SELECT c FROM ColumnName c WHERE c.columnName = :columnName")
+    @Query("SELECT c FROM ColumnName c WHERE c.nameOfColumn = :columnName")
     Optional<ColumnName> findByColumnName(@Param("columnName") String columnName);
 
-    @Query("SELECT c FROM ColumnName c WHERE c.columnName IN :columnNames")
+    @Query("SELECT c FROM ColumnName c WHERE c.nameOfColumn IN :columnNames")
     List<ColumnName> findByColumnNames(@Param("columnNames") List<String> columnNames);
 
     @Query("SELECT c FROM ColumnName c")

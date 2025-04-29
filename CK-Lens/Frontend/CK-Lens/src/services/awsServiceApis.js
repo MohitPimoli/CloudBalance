@@ -2,17 +2,17 @@ import api from "../api/axios";
 
 export const fetchEC2Instances = async (accountNumber) => {
     const res = await api.get("/aws/ec2", { params: { accountNumber } });
-    return res.data;
+    return res;
 };
 
 export const fetchRDSInstances = async (accountNumber) => {
     const res = await api.get("/aws/rds", { params: { accountNumber } });
-    return res.data;
+    return res;
 };
 
 export const fetchASGInstances = async (accountNumber) => {
     const res = await api.get("/aws/asg", { params: { accountNumber } });
-    return res.data;
+    return res;
 };
 
 export const fetchAccounts = async () => {

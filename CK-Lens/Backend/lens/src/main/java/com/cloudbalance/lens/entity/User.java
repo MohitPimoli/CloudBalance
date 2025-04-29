@@ -43,6 +43,6 @@ public class User {
     @Column(name = "last_accessed_time")
     private LocalDateTime lastAccessedTime;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<UserCloudAccount> assignedAccounts;
 }

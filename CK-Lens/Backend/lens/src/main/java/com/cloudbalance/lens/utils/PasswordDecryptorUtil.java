@@ -1,8 +1,10 @@
 package com.cloudbalance.lens.utils;
 
+import com.cloudbalance.lens.exception.GenericApplicationException;
 import com.cloudbalance.lens.exception.KeyLoadingException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+
 import javax.crypto.Cipher;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -14,6 +16,7 @@ import java.util.Base64;
 @Component
 @Slf4j
 public class PasswordDecryptorUtil {
+    private PasswordDecryptorUtil(){}
 
     public PrivateKey getPrivateKey() {
         try (InputStream is = getClass().getResourceAsStream("/keys/private_key.pem")) {
@@ -39,13 +42,13 @@ public class PasswordDecryptorUtil {
 
     public String decryptPassword(String encryptedPassword) {
         try {
-            Cipher cipher = Cipher.getInstance("RSA");
+            Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
             cipher.init(Cipher.DECRYPT_MODE, getPrivateKey());
             byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(encryptedPassword));
             return new String(decryptedBytes, StandardCharsets.UTF_8);
         } catch (Exception e) {
             log.error("Failed to decrypt password", e);
-            throw new RuntimeException("Failed to decrypt password", e);
+            throw new GenericApplicationException("Failed to decrypt password", e.getCause());
         }
     }
 }

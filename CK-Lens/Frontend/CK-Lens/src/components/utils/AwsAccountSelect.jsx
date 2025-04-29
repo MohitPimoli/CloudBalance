@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Autocomplete, Box, TextField } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAccounts } from "../../services/awsServiceApis";
@@ -12,9 +12,14 @@ const AwsAccountSelect = ({ selectedAccount, setSelectedAccount, label }) => {
     queryKey: ["accounts", id],
     queryFn: fetchAccounts,
     enabled: !!id,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 
+  useEffect(() => {
+    if (accounts.length > 0 && !selectedAccount) {
+      setSelectedAccount(accounts[0].accountNumber);
+    }
+  }, []);
   return (
     <Box minWidth={250}>
       <Autocomplete

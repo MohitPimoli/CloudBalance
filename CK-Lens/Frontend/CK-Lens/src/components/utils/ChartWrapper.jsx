@@ -8,6 +8,7 @@ import { Box } from "@mui/material";
 ReactFC.fcRoot(FusionCharts, Charts, FusionTheme);
 
 const ChartWrapper = ({ chartConfigs }) => {
+  console.log("Chart-Data:", chartConfigs);
   return (
     <Box>
       <ReactFC {...chartConfigs} />

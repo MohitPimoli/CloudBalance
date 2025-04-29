@@ -1,5 +1,8 @@
+import Cookies from "js-cookie";
+
 export const loginSuccess = (userData) => {
-    sessionStorage.setItem("token", userData.token);
+    Cookies.set("token", userData.token, { secure: true, sameSite: "Strict" });
+
     return {
         type: 'LOGIN_SUCCESS',
         payload: {

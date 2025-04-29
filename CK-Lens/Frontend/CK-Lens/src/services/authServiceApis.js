@@ -1,8 +1,16 @@
 import api from "../api/axios";
 import JSEncrypt from 'jsencrypt';
+import Cookies from "js-cookie";
 
 export const logoutUser = async () => {
-    const response = await api.get("/auth/logout");
+    const accessToken = Cookies.get("token");
+    const response = await api.post("/auth/logout", {}, {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+        withCredentials: true,
+    });
+
     return response;
 };
 

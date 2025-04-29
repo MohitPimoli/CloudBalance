@@ -13,10 +13,18 @@ import {
   useTheme,
 } from "@mui/material";
 import DynamicFilterFields from "./DynamicFilterFields";
-import { ChartColumn, ChartLine, AlertTriangle } from "lucide-react";
+import {
+  ChartColumn,
+  ChartLine,
+  ArrowDownToLine,
+  AlertTriangle,
+} from "lucide-react";
 import { fetchCostData } from "../../services/costExplorerApis";
 import { useQuery } from "@tanstack/react-query";
 import CostDataTable from "./CostDataTable";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+import { RiFileExcel2Fill } from "react-icons/ri";
 
 const CostExplorerDataWrapper = ({
   selectedAccount,
@@ -25,23 +33,26 @@ const CostExplorerDataWrapper = ({
   filters,
 }) => {
   const theme = useTheme();
-  const [chartType, setChartType] = useState("line");
+  const [chartType, setChartType] = useState("bar");
   const [startDate, setStartDate] = useState(dayjs().startOf("month"));
   const [endDate, setEndDate] = useState(dayjs().endOf("month"));
   const [appliedFilters, setAppliedFilters] = useState({});
 
   const groupTotals = {};
+
   const payload = {
     accountId: selectedAccount,
     groupBy: selectedOption,
     startDate: startDate.format("YYYY-MM-DD"),
     endDate: endDate.format("YYYY-MM-DD"),
-    filters: Object.entries(appliedFilters).map(
-      ([columnName, filterValues]) => ({
-        columnName,
-        filterValues,
-      })
-    ),
+    filterDTO: {
+      filters: Object.entries(appliedFilters).map(
+        ([columnName, filterValues]) => ({
+          columnName,
+          filterValues,
+        })
+      ),
+    },
   };
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -53,6 +64,20 @@ const CostExplorerDataWrapper = ({
   const handleApplyFilters = (filtersObj) => {
     setAppliedFilters(filtersObj);
     refetch();
+  };
+
+  const exportToExcel = (data, fileName = "cost-data.xlsx") => {
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Cost Data");
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+    const blob = new Blob([excelBuffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    saveAs(blob, fileName);
   };
 
   if (isLoading) {
@@ -115,19 +140,29 @@ const CostExplorerDataWrapper = ({
     );
   }
 
-  const uniqueDates = [...new Set(data?.data.map((item) => item.date))].sort();
+  // Check if data exists and has items in the data array
+  const hasResponseData = data && data.data && data.data.length > 0;
+
+  // Early return if no data
+  if (!hasResponseData) {
+    return renderNoDataView();
+  }
+
+  const uniqueDates = [...new Set(data.data.map((item) => item.date))].sort();
   const categories = [
     {
       category: uniqueDates.map((date) => ({ label: date })),
     },
   ];
 
-  data?.data.forEach((item) => {
+  // Calculate group totals with safety check for small numbers
+  data.data.forEach((item) => {
     const name = item.groupBy || "Total";
     if (!groupTotals[name]) {
       groupTotals[name] = 0;
     }
-    groupTotals[name] += Math.abs(item.cost);
+    // Use Number() to ensure proper numeric handling of scientific notation
+    groupTotals[name] += Math.abs(Number(item.cost));
   });
 
   const sortedGroupNames = Object.keys(groupTotals).sort(
@@ -139,19 +174,20 @@ const CostExplorerDataWrapper = ({
   const dataset = [...topGroups, "Others"].map((groupType) => {
     const values = uniqueDates.map((date) => {
       if (groupType === "Others") {
-        const sumOthers = data?.data
+        const sumOthers = data.data
           .filter(
             (item) =>
               item.date === date && !topGroups.includes(item.groupBy || "Total")
           )
-          .reduce((sum, item) => sum + Math.abs(item.cost), 0);
-        return { value: sumOthers.toFixed(2) };
+          .reduce((sum, item) => sum + Math.abs(Number(item.cost)), 0);
+
+        return { value: sumOthers.toFixed(8) }; // Increase precision to handle small values
       } else {
-        const match = data?.data.find(
+        const match = data.data.find(
           (item) =>
             item.date === date && (item.groupBy || "Total") === groupType
         );
-        return { value: match ? Math.abs(match.cost).toFixed(2) : "0" };
+        return { value: match ? Math.abs(Number(match.cost)).toFixed(8) : "0" }; // Increase precision
       }
     });
 
@@ -161,12 +197,44 @@ const CostExplorerDataWrapper = ({
     };
   });
 
-  // Check if we have any data to display
+  // Check if there's any actual cost data to display (even very small values)
   const hasData = dataset.some((series) =>
     series.data.some((item) => parseFloat(item.value) > 0)
   );
 
+  function renderNoDataView() {
+    return (
+      <Box
+        sx={{
+          p: 4,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "400px",
+          textAlign: "center",
+        }}
+      >
+        <Typography
+          variant="h6"
+          color="text.secondary"
+          gutterBottom
+        >
+          No Cost Data Available
+        </Typography>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+        >
+          There is no cost data for the selected criteria. Try changing your
+          filters or date range.
+        </Typography>
+      </Box>
+    );
+  }
+
   const chartConfigs = {
+    fontSize: "0.875rem",
     type: chartType === "line" ? "msline" : "mscolumn2d",
     width: "100%",
     height: "400",
@@ -187,8 +255,6 @@ const CostExplorerDataWrapper = ({
         legendBorderAlpha: "0",
         legendShadow: "0",
         plotHighlightEffect: "fadeout",
-        // usePlotGradientColor: "1",
-        // plotGradientColor: "#ffffff",
         usePlotGradientColor: "0",
         showPlotBorder: "0",
         showHoverEffect: "1",
@@ -202,6 +268,12 @@ const CostExplorerDataWrapper = ({
         toolTipPadding: "6",
         alignCaptionWithCanvas: "0",
         captionPadding: "15",
+        // Format numbers to display very small values properly
+        numberScaleValue: "1,10,100,1000,10000,100000",
+        numberScaleUnit: ",,M,B",
+        formatNumberScale: "1",
+        decimals: "4", // Show more decimal places for small values
+        forceDecimals: "1",
         dataEmptyMessage: "No cost data available for the selected criteria.",
         dataEmptyMessageColor: "#666666",
         dataEmptyMessageFontSize: "14",
@@ -239,7 +311,6 @@ const CostExplorerDataWrapper = ({
         >
           {`Cost Analysis by ${selectedOption}`}
         </Typography>
-
         <Box
           sx={{
             display: "flex",
@@ -255,7 +326,6 @@ const CostExplorerDataWrapper = ({
             endDate={endDate}
             setEndDate={setEndDate}
           />
-
           <ToggleButtonGroup
             value={chartType}
             exclusive
@@ -284,7 +354,6 @@ const CostExplorerDataWrapper = ({
           </ToggleButtonGroup>
         </Box>
       </Box>
-
       {/* Main content area with chart and filters */}
       <Box
         sx={{
@@ -316,38 +385,12 @@ const CostExplorerDataWrapper = ({
             }}
           >
             {!hasData ? (
-              <Box
-                sx={{
-                  p: 4,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  height: "400px",
-                  textAlign: "center",
-                }}
-              >
-                <Typography
-                  variant="h6"
-                  color="text.secondary"
-                  gutterBottom
-                >
-                  No Cost Data Available
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                >
-                  There is no cost data for the selected criteria. Try changing
-                  your filters or date range.
-                </Typography>
-              </Box>
+              renderNoDataView()
             ) : (
               <ChartWrapper chartConfigs={chartConfigs} />
             )}
           </Card>
         </Box>
-
         {/* Filters panel (conditionally rendered) */}
         {toggleFilter && (
           <Box
@@ -364,16 +407,63 @@ const CostExplorerDataWrapper = ({
           </Box>
         )}
       </Box>
-
       {/* Table area */}
       <Box sx={{ p: 2, pt: 0 }}>
-        <Typography
-          variant="subtitle1"
-          sx={{ mt: 2, mb: 1, fontWeight: 500 }}
+        {/* Table header with export button */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mt: 2,
+            mb: 1,
+          }}
         >
-          Detailed Cost Data
-        </Typography>
-        <CostDataTable data={data?.data} />
+          <Typography
+            variant="subtitle1"
+            sx={{ fontWeight: 500 }}
+          >
+            Detailed Cost Data
+          </Typography>
+          <Box
+            component="button"
+            onClick={() =>
+              exportToExcel(
+                data?.data,
+                `Cost-Data-For-${selectedOption}-${dayjs().format(
+                  "YYYY-MM-DD"
+                )}.xlsx`
+              )
+            }
+            sx={{
+              px: 2,
+              py: 1,
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 1,
+              border: "1px solid gray",
+              borderRadius: 1,
+              cursor: "pointer",
+              "&:hover": {
+                backgroundColor: "#f0f0f0",
+              },
+            }}
+          >
+            <RiFileExcel2Fill
+              size={24}
+              color="#28a745"
+            />
+            <ArrowDownToLine
+              size={20}
+              color="gray"
+            />
+          </Box>
+        </Box>
+        <CostDataTable
+          data={data?.data}
+          appliedGroupBy={selectedOption}
+        />
       </Box>
     </Paper>
   );

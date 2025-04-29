@@ -6,16 +6,18 @@ import com.cloudbalance.lens.exception.ResourceAlreadyExistsException;
 import com.cloudbalance.lens.repository.AccountRepository;
 import com.cloudbalance.lens.service.onboarding.OnboardingService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 
 @Slf4j
 @Service
 public class OnboardingServiceImpl implements OnboardingService {
 
-    @Autowired
-    private AccountRepository accountRepository;
+    private final AccountRepository accountRepository;
+    public OnboardingServiceImpl(AccountRepository accountRepository) {
+        this.accountRepository = accountRepository;
+    }
 
     @Override
     public String registerAwsAccount(OnboardingRequest onboardingRequest) {
@@ -46,7 +48,8 @@ public class OnboardingServiceImpl implements OnboardingService {
                 .build();
 
         Account savedAccount = accountRepository.save(account);
-        log.info("Successfully onboarded AWS account: ID={}, Name={}", savedAccount.getId(), savedAccount.getAccountHolderName());
+        log.info("Successfully onboarded AWS account: ID={}, Name={}", savedAccount.getId(),
+                savedAccount.getAccountHolderName());
         return "AWS account added successfully";
     }
 }

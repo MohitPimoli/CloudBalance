@@ -1,10 +1,14 @@
 package com.cloudbalance.lens.exception;
 
-public class CustomException {
+public class CustomException extends ApiException {
+
+    public CustomException(String message) {
+        super(message);
+    }
 
     public static class UserNotFoundException extends ApiException {
-        public UserNotFoundException(String username) {
-            super("User not found with username: " + username);
+        public UserNotFoundException(String message) {
+            super(message);
         }
     }
 
@@ -17,6 +21,12 @@ public class CustomException {
     public static class TokenMissingException extends ApiException {
         public TokenMissingException() {
             super("Authorization token is missing or malformed.");
+        }
+    }
+
+    public static class InvalidArgumentsException extends ApiException {
+        public InvalidArgumentsException(String message) {
+            super(message);
         }
     }
 }

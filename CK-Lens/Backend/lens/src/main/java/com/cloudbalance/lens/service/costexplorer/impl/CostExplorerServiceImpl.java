@@ -1,35 +1,38 @@
 package com.cloudbalance.lens.service.costexplorer.impl;
 
-import com.cloudbalance.lens.dto.costexplorer.ColumnFilterDTO;
 import com.cloudbalance.lens.dto.costexplorer.CostExplorerRequestDTO;
 import com.cloudbalance.lens.dto.costexplorer.CostExplorerResponseDTO;
 import com.cloudbalance.lens.dto.costexplorer.DisplayNameDTO;
 import com.cloudbalance.lens.entity.ColumnName;
 import com.cloudbalance.lens.exception.BadRequestException;
+import com.cloudbalance.lens.exception.CustomException;
 import com.cloudbalance.lens.exception.ResourceNotFoundException;
 import com.cloudbalance.lens.repository.AccountRepository;
 import com.cloudbalance.lens.repository.ColumnNameRepository;
 import com.cloudbalance.lens.service.costexplorer.CostExplorerService;
+import com.cloudbalance.lens.utils.Constant;
 import com.cloudbalance.lens.utils.SnowflakeRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.List;
 
+import java.time.LocalDate;
+import java.util.List;
 
 @Service
 @Slf4j
 public class CostExplorerServiceImpl implements CostExplorerService {
 
-    @Autowired
-    private SnowflakeRepository snowflakeRepository;
-    @Autowired
-    private ColumnNameRepository columnNameRepository;
-    @Autowired
-    private AccountRepository accountRepository;
+    private final SnowflakeRepository snowflakeRepository;
+    private final ColumnNameRepository columnNameRepository;
+    private final AccountRepository accountRepository;
+
+    public CostExplorerServiceImpl(SnowflakeRepository snowflakeRepository,
+                                   ColumnNameRepository columnNameRepository,
+                                   AccountRepository accountRepository) {
+        this.snowflakeRepository = snowflakeRepository;
+        this.columnNameRepository = columnNameRepository;
+        this.accountRepository = accountRepository;
+    }
 
     @Override
     public List<DisplayNameDTO> getDisplayName() {
@@ -40,11 +43,11 @@ public class CostExplorerServiceImpl implements CostExplorerService {
     public List<String> getFilter(String fieldName) {
 
         if (!fieldName.matches("^[a-zA-Z_-][a-zA-Z0-9_-]*$")) {
-            throw new IllegalArgumentException("Invalid column name format");
+            throw new CustomException.InvalidArgumentsException("Invalid column name format: {}"+ fieldName);
         }
         ColumnName columnName = columnNameRepository.findByFieldName(fieldName)
-                .orElseThrow(() -> new ResourceNotFoundException("Column Name not found for FieldName: " + fieldName));
-        return snowflakeRepository.getFilter(columnName.getColumnName());
+                .orElseThrow(() -> new ResourceNotFoundException(Constant.COLUMN_NAME_NOT_FOUND + fieldName));
+        return snowflakeRepository.getFilter(columnName.getNameOfColumn());
     }
 
     @Override
@@ -52,41 +55,27 @@ public class CostExplorerServiceImpl implements CostExplorerService {
         accountRepository.findByAccountNumber(Long.valueOf(costExplorerRequestDTO.getAccountId()))
                 .orElseThrow(() -> {
                     log.warn("Account not found with account number: {}", costExplorerRequestDTO.getAccountId());
-                    return new ResourceNotFoundException("Account not found with AccountNumber: " + costExplorerRequestDTO.getAccountId());
+                    return new ResourceNotFoundException(Constant.ACCOUNT_NOT_FOUND_WITH_ACCOUNT_ID +
+                            costExplorerRequestDTO.getAccountId());
                 });
 
         ColumnName columnName = columnNameRepository.findByFieldName(costExplorerRequestDTO.getGroupBy())
                 .orElseThrow(() -> {
                     log.warn("Column not found for field name {}", costExplorerRequestDTO.getGroupBy());
-                    return new ResourceNotFoundException("Column not found for field name: " + costExplorerRequestDTO.getGroupBy());
+                    return new ResourceNotFoundException(Constant.COLUMN_NAME_NOT_FOUND +
+                            costExplorerRequestDTO.getGroupBy());
                 });
 
-        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
-        try {
-            if (costExplorerRequestDTO.getStartDate() != null && !costExplorerRequestDTO.getStartDate().trim().isEmpty()) {
-                LocalDate.parse(costExplorerRequestDTO.getStartDate(), formatter);
-            }
+        LocalDate startDate = LocalDate.parse(costExplorerRequestDTO.getStartDate());
+        LocalDate endDate = LocalDate.parse(costExplorerRequestDTO.getEndDate());
 
-            if (costExplorerRequestDTO.getEndDate() != null && !costExplorerRequestDTO.getEndDate().trim().isEmpty()) {
-                LocalDate.parse(costExplorerRequestDTO.getEndDate(), formatter);
-            }
-        } catch (DateTimeParseException ex) {
-            throw new BadRequestException("Invalid date format. Expected format is YYYY-MM-DD");
-        }
-
-        if (costExplorerRequestDTO.getFilterDTO() != null && costExplorerRequestDTO.getFilterDTO().getFilters() != null) {
-            if (!costExplorerRequestDTO.getFilterDTO().getFilters().isEmpty()) {
-                for (ColumnFilterDTO.ColumnFilter filter : costExplorerRequestDTO.getFilterDTO().getFilters()) {
-                    if (filter.getFilterValues() == null || filter.getFilterValues().isEmpty()) {
-                        throw new BadRequestException("Filter values cannot be empty for column: " + filter.getColumnName());
-                    }
-                }
-            }
+        if (startDate.isAfter(endDate)) {
+            throw new BadRequestException("Start date cannot be later than end date");
         }
 
         List<CostExplorerResponseDTO.CostExplorerData> data = snowflakeRepository.getData(
                 costExplorerRequestDTO.getAccountId(),
-                columnName.getColumnName(),
+                columnName.getNameOfColumn(),
                 costExplorerRequestDTO.getStartDate(),
                 costExplorerRequestDTO.getEndDate(),
                 costExplorerRequestDTO.getFilterDTO()
@@ -101,11 +90,5 @@ public class CostExplorerServiceImpl implements CostExplorerService {
                 .message("Success")
                 .build();
     }
-
 }
-
-
-
-
-
 

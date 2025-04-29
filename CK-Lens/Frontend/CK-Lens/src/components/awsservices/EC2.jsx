@@ -8,11 +8,11 @@ import { fetchEC2Instances } from "../../services/awsServiceApis";
 
 const EC2 = ({ accountNumber }) => {
   const {
-    data = [],
+    data,
     isLoading,
     isFetching,
     isError,
-    error,
+    error
   } = useQuery({
     queryKey: ["ec2-instances", accountNumber],
     queryFn: () => fetchEC2Instances(accountNumber),
@@ -55,10 +55,10 @@ const EC2 = ({ accountNumber }) => {
   return (
     <DynamicReusableTable
       columns={columns}
-      data={Array.isArray(data) ? data : []}
+      data={Array.isArray(data?.data) ? data?.data : []}
       isLoading={isLoading || isFetching}
       isError={isError}
-      error={error}
+      error={!!error ? error?.response.data.message : "Please try again later."}
       renderCell={renderCell}
       enableFilters
       getRowId={(row) => row.id}

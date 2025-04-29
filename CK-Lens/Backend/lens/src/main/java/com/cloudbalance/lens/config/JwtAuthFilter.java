@@ -1,37 +1,40 @@
 package com.cloudbalance.lens.config;
 
 import com.cloudbalance.lens.dto.auth.CustomUserDetails;
-import com.cloudbalance.lens.entity.BlackListedToken;
 import com.cloudbalance.lens.repository.BlackListedTokenRepository;
 import com.cloudbalance.lens.service.auth.impl.CustomUserDetailsServiceImpl;
+import com.cloudbalance.lens.utils.TokenBlacklistUtil;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 @Slf4j
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    @Autowired
-    private JwtUtil jwtUtil;
-    @Autowired
-    private CustomUserDetailsServiceImpl userDetailsService;
-    @Autowired
-    private BlackListedTokenRepository blackListedTokenRepository;
+    private final JwtUtil jwtUtil;
+    private final CustomUserDetailsServiceImpl userDetailsService;
+    private final BlackListedTokenRepository blackListedTokenRepository;
+    private final TokenBlacklistUtil tokenBlacklisterUtil;
 
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    public JwtAuthFilter(JwtUtil jwtUtil,
+                         CustomUserDetailsServiceImpl userDetailsService,
+                         BlackListedTokenRepository blackListedTokenRepository,
+                         TokenBlacklistUtil tokenBlacklisterUtil) {
+        this.jwtUtil = jwtUtil;
+        this.userDetailsService = userDetailsService;
+        this.blackListedTokenRepository = blackListedTokenRepository;
+        this.tokenBlacklisterUtil = tokenBlacklisterUtil;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -41,7 +44,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             log.warn("Missing or invalid Authorization header");
-            writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Missing or invalid Authorization header.");
+            jwtUtil.writeCustomErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, 4001,
+                    "InvalidAuthorizationHeader", "Missing or invalid Authorization header.");
             return;
         }
 
@@ -50,7 +54,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         try {
             if (blackListedTokenRepository.existsByToken(token)) {
                 log.warn("Blacklisted token used: {}", token);
-                writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Token is blacklisted.");
+                jwtUtil.writeCustomErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, 4002,
+                        "BlacklistedToken", "Token is blacklisted.");
                 return;
             }
             String username = jwtUtil.extractUsername(token);
@@ -60,7 +65,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
                 if (jwtUtil.validateToken(token, customUserDetails)) {
                     UsernamePasswordAuthenticationToken authToken =
-                            new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
+                            new UsernamePasswordAuthenticationToken(customUserDetails, null,
+                                    customUserDetails.getAuthorities());
 
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
@@ -68,20 +74,18 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             }
         } catch (ExpiredJwtException e) {
             log.warn("Expired token: {}", token);
+
             if (!blackListedTokenRepository.existsByToken(token)) {
-                BlackListedToken blackListedToken = BlackListedToken.builder()
-                        .token(token)
-                        .blacklistedAt((LocalDateTime.parse(LocalDateTime.now().format(FORMATTER), FORMATTER)))
-                        .tokenExpiry((LocalDateTime.parse(LocalDateTime.now().format(FORMATTER), FORMATTER)))
-                        .build();
-                blackListedTokenRepository.save(blackListedToken);
+                tokenBlacklisterUtil.blacklistToken(token);
                 log.info("Expired token blacklisted: {}", token);
             }
-            writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Token has expired.");
+            jwtUtil.writeCustomErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, 1001,
+                    "TokenExpired", "Your access token has expired. Please refresh.");
             return;
         } catch (Exception e) {
             log.error("Token validation failed", e);
-            writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid token.");
+            jwtUtil.writeCustomErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, 4003,
+                    "InvalidToken", "Your access token was invalid or tampered. Please login again.");
             return;
         }
         filterChain.doFilter(request, response);
@@ -92,12 +96,4 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
         return path.startsWith("/auth");
     }
-
-    private void writeErrorResponse(HttpServletResponse response, int status, String message) throws IOException {
-        response.setStatus(status);
-        response.setContentType("application/json");
-        response.getWriter().write("{\"error\": \"" + message + "\"}");
-    }
-
 }
-

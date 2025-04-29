@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -12,22 +12,10 @@ import {
   Box,
   CircularProgress,
   Stack,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
+  TextField,
+  InputAdornment,
 } from "@mui/material";
-import { ShieldAlert, Ban } from "lucide-react";
-import { Filter } from "lucide-react";
-
-const MENU_PROPS = {
-  PaperProps: {
-    style: {
-      maxHeight: 200,
-      width: 200,
-    },
-  },
-};
+import { ShieldAlert, Ban, Filter, XCircle } from "lucide-react";
 
 const DynamicReusableTable = ({
   columns,
@@ -37,7 +25,7 @@ const DynamicReusableTable = ({
   error,
   onScroll,
   enableFilters = false,
-  filterableDropdownColumns = [],
+  filterableColumns = [],
   getRowId = (row) => row.id,
   renderCell,
   onRowClick,
@@ -47,8 +35,7 @@ const DynamicReusableTable = ({
 }) => {
   const [filters, setFilters] = useState({});
   const [filterVisible, setFilterVisible] = useState({});
-  const [autoOpenFilterKey, setAutoOpenFilterKey] = useState(null);
-  const dropdownRefs = useRef({});
+
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
@@ -58,39 +45,19 @@ const DynamicReusableTable = ({
       ...prev,
       [key]: !prev[key],
     }));
-    setAutoOpenFilterKey(key);
-  };
-
-  const getUniqueValuesForColumn = (key) => {
-    const values = new Set(
-      data.map((item) => item[key]).filter((v) => v !== undefined && v !== null)
-    );
-    return Array.from(values);
   };
 
   const filteredData = useMemo(() => {
     return data.filter((item) =>
-      Object.entries(filters).every(
-        ([key, value]) => value === "" || item[key] === value
+      Object.entries(filters).every(([key, value]) =>
+        value
+          ? String(item[key] ?? "")
+              .toLowerCase()
+              .includes(value.toLowerCase())
+          : true
       )
     );
   }, [data, filters]);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      const isClickInsideAny = Object.values(dropdownRefs.current).some((ref) =>
-        ref?.contains(event.target)
-      );
-      if (!isClickInsideAny) {
-        setFilterVisible({});
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
   return (
     <TableContainer
@@ -102,8 +69,7 @@ const DynamicReusableTable = ({
         <TableHead>
           <TableRow>
             {columns.map(({ label, key }) => {
-              const isDropdown = filterableDropdownColumns.includes(key);
-              const showFilter = enableFilters && filterVisible[key];
+              const isFilterable = filterableColumns.includes(key);
               return (
                 <TableCell
                   key={key}
@@ -115,11 +81,11 @@ const DynamicReusableTable = ({
                     zIndex: 2,
                     minWidth: 140,
                   }}
-                  ref={(el) => {
-                    if (el) dropdownRefs.current[key] = el;
-                  }}
                 >
-                  {!showFilter ? (
+                  <Box
+                    display="flex"
+                    flexDirection="column"
+                  >
                     <Box
                       display="flex"
                       justifyContent="space-between"
@@ -131,49 +97,51 @@ const DynamicReusableTable = ({
                       >
                         {label}
                       </Typography>
-                      {enableFilters && isDropdown && (
+                      {enableFilters && isFilterable && (
                         <IconButton
                           size="small"
-                          sx={{ color: "white", p: 0.5, ml: 1 }}
+                          sx={{ color: "white", p: 0.5 }}
                           onClick={() => toggleFilterVisibility(key)}
                         >
                           <Filter size={16} />
                         </IconButton>
                       )}
                     </Box>
-                  ) : (
-                    <FormControl
-                      sx={{ ml: 2 }}
-                      fullWidth
-                      size="small"
-                      Checkbox
-                    >
-                      <InputLabel>{label}</InputLabel>
-                      <Select
-                        sx={{ borderRadius: 2 }}
-                        open={autoOpenFilterKey === key}
-                        onOpen={() => setAutoOpenFilterKey(key)}
-                        onClose={() => setAutoOpenFilterKey(null)}
+                    {enableFilters && isFilterable && filterVisible[key] && (
+                      <TextField
+                        onBlur={() =>
+                          setFilterVisible((prev) => ({
+                            ...prev,
+                            [key]: false,
+                          }))
+                        }
+                        variant="standard"
                         value={filters[key] || ""}
-                        onChange={(e) => {
-                          handleFilterChange(key, e.target.value);
-                          setFilterVisible({});
+                        onChange={(e) =>
+                          handleFilterChange(key, e.target.value)
+                        }
+                        placeholder="Search..."
+                        fullWidth
+                        sx={{
+                          mt: 1,
+                          backgroundColor: "white",
+                          borderRadius: 1,
                         }}
-                        label={label}
-                        MenuProps={MENU_PROPS}
-                      >
-                        <MenuItem value="">All</MenuItem>
-                        {getUniqueValuesForColumn(key).map((val) => (
-                          <MenuItem
-                            key={val}
-                            value={val}
-                          >
-                            {val}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  )}
+                        InputProps={{
+                          endAdornment: filters[key] ? (
+                            <InputAdornment position="end">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleFilterChange(key, "")}
+                              >
+                                <XCircle size={16} />
+                              </IconButton>
+                            </InputAdornment>
+                          ) : null,
+                        }}
+                      />
+                    )}
+                  </Box>
                 </TableCell>
               );
             })}
@@ -213,7 +181,8 @@ const DynamicReusableTable = ({
                     color="error"
                     variant="body2"
                   >
-                    Error fetching data: {error?.message || "Unknown error"}
+                    Error fetching data:{" "}
+                    {error || error?.message || "Unknown error"}
                   </Typography>
                 </Stack>
               </TableCell>
@@ -251,27 +220,31 @@ const DynamicReusableTable = ({
           )}
         </TableBody>
         {footerData && (
-          <tfoot>
+          <TableBody>
             <TableRow
               sx={{
+                position: "sticky",
+                bottom: 0,
                 backgroundColor: headBgColor,
+                zIndex: 1,
               }}
             >
-              {columns.map(({ key }, idx) => (
+              {columns.map(({ key }) => (
                 <TableCell key={key}>
                   <Typography
                     variant="subtitle2"
-                    sx={{
-                      fontWeight: "bold",
-                      color: headTextColor,
-                    }}
+                    sx={{ fontWeight: "bold", color: headTextColor }}
                   >
-                    {footerData[key] !== undefined ? footerData[key] : ""}
+                    {footerData[key] !== undefined
+                      ? typeof footerData[key] === "number"
+                        ? `$${footerData[key].toFixed(2)}`
+                        : footerData[key]
+                      : ""}
                   </Typography>
                 </TableCell>
               ))}
             </TableRow>
-          </tfoot>
+          </TableBody>
         )}
       </Table>
     </TableContainer>

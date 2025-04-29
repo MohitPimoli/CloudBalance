@@ -79,7 +79,9 @@ const AddNewUser = () => {
   }, [isEditMode, fetchUserData]);
 
   const handleLinkedAccountsChange = useCallback((accounts) => {
-    setLinkedAccounts(accounts.map((acc) => acc.accountId));
+    if (selectedRole === "CUSTOMER") {
+      setLinkedAccounts(accounts.map((acc) => acc.accountId));
+    }
   }, []);
 
   const onSubmit = async (data) => {

@@ -1,3 +1,4 @@
+import Cookies from "js-cookie";
 const initialState = {
   user: null,
   dashboardPermissions: [],
@@ -7,6 +8,7 @@ const initialState = {
 const authReducer = (state = initialState, action) => {
   switch (action.type) {
     case 'LOGIN_SUCCESS':
+
       return {
         ...state,
         token: action.payload.token,
@@ -19,7 +21,7 @@ const authReducer = (state = initialState, action) => {
         dashboardPermissions: action.payload.dashboardPermissions,
       };
     case 'LOGOUT':
-      sessionStorage.removeItem("token");
+      Cookies.remove("token");
       return initialState;
     default:
       return state;

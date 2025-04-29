@@ -1,5 +1,9 @@
-import React from "react";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import React, { useEffect } from "react";
+import {
+  createBrowserRouter,
+  RouterProvider,
+  useNavigate,
+} from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Root from "./layout/Root.jsx";
 import LoginPage from "./page/login.jsx";
@@ -15,9 +19,19 @@ import LoadingScreen from "./page/LoadingScreen.jsx";
 import AWSServiceWrapper from "./components/dashboards/AWSServicesWrapper.jsx";
 import OnboardingWrapper from "./components/dashboards/OnboardingWrapper.jsx";
 import CostExplorerDashboard from "./components/dashboards/CostExplorerDashboard.jsx";
+import { setNavigate } from "./services/navigationService.js";
 
 const queryClient = new QueryClient();
 
+const InitNavigateWrapper = ({ children }) => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    setNavigate(navigate);
+  }, [navigate]);
+
+  return children;
+};
 const router = createBrowserRouter([
   {
     path: "/login",
@@ -25,7 +39,11 @@ const router = createBrowserRouter([
   },
   {
     path: "/",
-    element: <Root />,
+    element: (
+      <InitNavigateWrapper>
+        <Root />
+      </InitNavigateWrapper>
+    ),
     children: [
       {
         index: true,

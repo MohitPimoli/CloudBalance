@@ -8,21 +8,26 @@ import com.cloudbalance.lens.service.awsservices.impl.AWSServiceImpl;
 import com.cloudbalance.lens.service.usermanagement.UserManagementService;
 import com.cloudbalance.lens.validation.OnCreate;
 import com.cloudbalance.lens.validation.OnUpdate;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
 @RequestMapping("/user")
 public class UserManagementController {
 
-    @Autowired
-    private UserManagementService userManagementService;
-    @Autowired
-    private AWSServiceImpl awsService;
+    private final UserManagementService userManagementService;
+    private final AWSServiceImpl awsService;
+
+
+    public UserManagementController(UserManagementService userManagementService, AWSServiceImpl awsService) {
+        this.userManagementService = userManagementService;
+        this.awsService = awsService;
+    }
+
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/register")                                                            //add a user
@@ -45,7 +50,7 @@ public class UserManagementController {
     }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'READ-ONLY')")
-    @GetMapping("/account/all")                                                                                  // fetch all Accounts
+    @GetMapping("/account/all")                                                                          // fetch all Accounts
     public ResponseEntity<List<AssignAccountResponse>> fetchAllAccounts() {
         return ResponseEntity.ok(awsService.fetchAllAccounts());
     }

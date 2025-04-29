@@ -2,13 +2,13 @@ package com.cloudbalance.lens.service.usermanagement.impl;
 
 import com.cloudbalance.lens.dto.account.AssignAccountResponse;
 import com.cloudbalance.lens.dto.pagination.PagedResponse;
-import com.cloudbalance.lens.dto.usermanagement.UserManagementDTO;
 import com.cloudbalance.lens.dto.usermanagement.UserDTO;
+import com.cloudbalance.lens.dto.usermanagement.UserManagementDTO;
 import com.cloudbalance.lens.entity.Account;
 import com.cloudbalance.lens.entity.Role;
 import com.cloudbalance.lens.entity.User;
 import com.cloudbalance.lens.entity.UserCloudAccount;
-import com.cloudbalance.lens.exception.BadRequestException;
+import com.cloudbalance.lens.exception.CustomException;
 import com.cloudbalance.lens.exception.ResourceAlreadyExistsException;
 import com.cloudbalance.lens.exception.ResourceNotFoundException;
 import com.cloudbalance.lens.repository.AccountRepository;
@@ -16,18 +16,17 @@ import com.cloudbalance.lens.repository.RoleRepository;
 import com.cloudbalance.lens.repository.UserCloudAccountRepository;
 import com.cloudbalance.lens.repository.UserRepository;
 import com.cloudbalance.lens.service.usermanagement.UserManagementService;
+import com.cloudbalance.lens.utils.Constant;
 import com.cloudbalance.lens.utils.PasswordDecryptorUtil;
 import com.cloudbalance.lens.utils.PasswordEncoderUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.time.LocalDateTime;
+
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,17 +34,26 @@ import java.util.List;
 @Slf4j
 public class UserManagementImpl implements UserManagementService {
 
+
+    private final UserRepository userRepository;
+    private final AccountRepository accountRepository;
+    private final RoleRepository roleRepository;
+    private final UserCloudAccountRepository userCloudAccountRepository;
+    private final PasswordDecryptorUtil passwordDecryptorUtil;
+
+    public UserManagementImpl(UserRepository userRepository,
+                              AccountRepository accountRepository,
+                              RoleRepository roleRepository,
+                              UserCloudAccountRepository userCloudAccountRepository,
+                              PasswordDecryptorUtil passwordDecryptorUtil) {
+        this.userRepository = userRepository;
+        this.accountRepository = accountRepository;
+        this.roleRepository = roleRepository;
+        this.userCloudAccountRepository = userCloudAccountRepository;
+        this.passwordDecryptorUtil = passwordDecryptorUtil;
+    }
+
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private AccountRepository accountRepository;
-    @Autowired
-    private RoleRepository roleRepository;
-    @Autowired
-    private UserCloudAccountRepository userCloudAccountRepository;
-    @Autowired
-    private PasswordDecryptorUtil passwordDecryptorUtil;
 
     @Override
     @Transactional
@@ -53,28 +61,20 @@ public class UserManagementImpl implements UserManagementService {
         UserDTO userDTO = userManagementDTO.getUserDTO();
 
         List<User> existingUsers = userRepository.findByUsernameOrEmail(userDTO.getUsername(), userDTO.getEmail());
-        for (User user : existingUsers) {
-            if (user.getUsername().equals(userDTO.getUsername())) {
-                throw new ResourceAlreadyExistsException("Username already exists.");
-            }
-            if (user.getEmail().equals(userDTO.getEmail())) {
-                throw new ResourceAlreadyExistsException("Email already exists.");
-            }
+        if(!existingUsers.isEmpty()){
+            throw new ResourceAlreadyExistsException("User already exist either username or email");
         }
 
         Role role = getRole(userDTO);
-
         String decryptedPass = passwordDecryptorUtil.decryptPassword(userDTO.getPassword());
-
         User user = User.builder()
                 .firstname(userDTO.getFirstName())
                 .lastname(userDTO.getLastName())
-                .username(userDTO.getFirstName() + '@' + userDTO.getLastName()) // do change in prod
+                .username(userDTO.getUsername())
                 .email(userDTO.getEmail())
                 .password(PasswordEncoderUtil.encode(decryptedPass))
                 .role(role)
                 .active(true)
-                .lastAccessedTime(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS))
                 .build();
 
         user = userRepository.save(user);
@@ -107,57 +107,63 @@ public class UserManagementImpl implements UserManagementService {
     @Override
     public String updateUser(UserManagementDTO userManagementDTO) {
         UserDTO userDTO = userManagementDTO.getUserDTO();
-
-        if (userDTO == null || userDTO.getId() == null) {
-            log.error("Invalid update request: User ID is required");
-            throw new BadRequestException("User ID is required");
-        }
-
         User user = userRepository.findById(userDTO.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userDTO.getId()));
+                .orElseThrow(() -> new CustomException.UserNotFoundException("User not found with ID: " + userDTO.getId()));
 
-        log.debug("Encrypted password received: {}", userDTO.getPassword());
+        updateBasicFields(user, userDTO);
+        updatePasswordIfNeeded(user, userDTO);
+        updateRoleAndAccounts(user, userDTO, userManagementDTO.getAccountIds());
 
+        userRepository.save(user);
+        log.info("User ID {} updated successfully", user.getId());
+        return "User details updated successfully";
+    }
+
+    private void updateBasicFields(User user, UserDTO userDTO) {
         if (userDTO.getFirstName() != null) user.setFirstname(userDTO.getFirstName());
         if (userDTO.getLastName() != null) user.setLastname(userDTO.getLastName());
         if (userDTO.getEmail() != null) user.setEmail(userDTO.getEmail());
+    }
 
+    private void updatePasswordIfNeeded(User user, UserDTO userDTO) {
         if (userDTO.getPassword() != null && !userDTO.getPassword().isBlank()) {
             String decryptedPass = passwordDecryptorUtil.decryptPassword(userDTO.getPassword());
             user.setPassword(PasswordEncoderUtil.encode(decryptedPass));
             log.info("Password updated for user ID {}", user.getId());
         }
+    }
 
+    private void updateRoleAndAccounts(User user, UserDTO userDTO, List<Long> accountIds) {
         if (userDTO.getRoleName() != null) {
             Role newRole = getRole(userDTO);
             user.setRole(newRole);
 
             if (!userDTO.getRoleName().equalsIgnoreCase("CUSTOMER")) {
-
                 user.getAssignedAccounts().clear();
                 log.info("Non-customer role detected. Cleared all account associations for user ID {}", user.getId());
             } else {
-                List<Long> accountIds = userManagementDTO.getAccountIds();
-                if (accountIds != null) {
-                    user.getAssignedAccounts().clear();
-                    List<UserCloudAccount> newLinks = new ArrayList<>();
-                    for (Long accountId : accountIds) {
-                        Account account = accountRepository.findById(accountId)
-                                .orElseThrow(() -> new ResourceNotFoundException("Account not found with ID: " + accountId));
-                        UserCloudAccount userCloudAccount = new UserCloudAccount();
-                        userCloudAccount.setUser(user);
-                        userCloudAccount.setCloudAccount(account);
-                        newLinks.add(userCloudAccount);
-                    }
-                    user.getAssignedAccounts().addAll(newLinks);
-                    log.info("{} account(s) linked to user ID {} as CUSTOMER", newLinks.size(), user.getId());
-                }
+                updateAssignedAccounts(user, accountIds);
             }
         }
-        userRepository.save(user);
-        log.info("User ID {} updated successfully", user.getId());
-        return "User details updated successfully";
     }
+
+    private void updateAssignedAccounts(User user, List<Long> accountIds) {
+        if (accountIds != null) {
+            user.getAssignedAccounts().clear();
+            List<UserCloudAccount> newLinks = new ArrayList<>();
+            for (Long accountId : accountIds) {
+                Account account = accountRepository.findById(accountId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Account not found with ID: " + accountId));
+                UserCloudAccount userCloudAccount = new UserCloudAccount();
+                userCloudAccount.setUser(user);
+                userCloudAccount.setCloudAccount(account);
+                newLinks.add(userCloudAccount);
+            }
+            user.getAssignedAccounts().addAll(newLinks);
+            log.info("{} account(s) linked to user ID {} as CUSTOMER", newLinks.size(), user.getId());
+        }
+    }
+
 
     @Override
     public PagedResponse<UserDTO> fetchAllUsers(int page, int size) {
@@ -194,7 +200,7 @@ public class UserManagementImpl implements UserManagementService {
         List<Account> allAccounts = accountRepository.findAll();
         List<AssignAccountResponse> assignAccountDTOS;
             User user = userRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+                    .orElseThrow(() -> new CustomException.UserNotFoundException(Constant.USER_NOT_FOUND_WITH_ID + id));
             List<Long> linkedAccountIds = user.getAssignedAccounts().stream()
                     .map(uca -> uca.getCloudAccount().getId())
                     .toList();
@@ -215,7 +221,7 @@ public class UserManagementImpl implements UserManagementService {
     @Override
     public UserDTO fetchUserDetail(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + id));
+                .orElseThrow(() -> new CustomException.UserNotFoundException(Constant.USER_NOT_FOUND_WITH_ID + id));
         return UserDTO.builder()
                 .id(user.getId())
                 .username(user.getUsername())

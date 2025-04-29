@@ -8,11 +8,11 @@ import { fetchRDSInstances } from "../../services/awsServiceApis";
 
 const RDS = ({ accountNumber }) => {
   const {
-    data = [],
+    data,
     isLoading,
     isFetching,
     isError,
-    error,
+    error
   } = useQuery({
     queryKey: ["rds-instances", accountNumber],
     queryFn: () => fetchRDSInstances(accountNumber),
@@ -55,10 +55,10 @@ const RDS = ({ accountNumber }) => {
   return (
     <DynamicReusableTable
       columns={columns}
-      data={Array.isArray(data) ? data : []}
+      data={Array.isArray(data?.data) ? data?.data : []}
       isLoading={isLoading || isFetching}
       isError={isError}
-      error={error}
+      error={!!error ? error?.response.data.message : "Please try again later."}
       renderCell={renderCell}
       enableFilters
       getRowId={(row) => row.id}

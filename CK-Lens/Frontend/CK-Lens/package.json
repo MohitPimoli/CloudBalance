@@ -19,8 +19,10 @@
     "@tanstack/react-query": "^5.74.4",
     "axios": "^1.8.4",
     "dayjs": "^1.11.13",
+    "file-saver": "^2.0.5",
     "framer-motion": "^12.6.5",
     "fusioncharts": "^4.1.2",
+    "js-cookie": "^3.0.5",
     "jsencrypt": "^3.3.2",
     "jwt-decode": "^4.0.0",
     "lodash.debounce": "^4.0.8",
@@ -29,12 +31,14 @@
     "react-dom": "^18.3.1",
     "react-fusioncharts": "^4.1.0",
     "react-hook-form": "^7.55.0",
+    "react-icons": "^5.5.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.5.0",
     "redux": "^5.0.1",
     "redux-persist": "^6.0.0",
     "redux-thunk": "^3.1.0",
-    "tailwindcss": "^4.0.9"
+    "tailwindcss": "^4.0.9",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",

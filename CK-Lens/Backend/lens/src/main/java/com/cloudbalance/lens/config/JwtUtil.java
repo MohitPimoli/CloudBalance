@@ -7,13 +7,16 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
+
+import java.io.IOException;
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Component
 public class JwtUtil {
@@ -41,7 +44,7 @@ public class JwtUtil {
                 .getBody();
     }
 
-    private boolean isTokenExpired(String token) {
+    public boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
 
@@ -54,16 +57,32 @@ public class JwtUtil {
         return generateToken(new HashMap<>(), userDetails);
     }
 
+    public String generateRefreshToken(CustomUserDetails userDetails) {
+        Map<String, Object> extraClaims = new HashMap<>();
+        extraClaims.put("roles", userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList());
+
+        return Jwts.builder()
+                .setClaims(extraClaims)
+                .setSubject(userDetails.getUsername())
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + 3 * 24 * 60 * 60 * 1000L)) // 3 days
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
     public String generateToken(Map<String, Object> extraClaims, CustomUserDetails customUserDetails) {
-        extraClaims.put("roles", customUserDetails.getAuthorities().stream()
-                .map(auth -> auth.getAuthority())
-                .collect(Collectors.toList()));
+        extraClaims.put("roles", customUserDetails.getAuthorities()
+                .stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList());
 
         return Jwts.builder()
                 .setClaims(extraClaims)
                 .setSubject(customUserDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 250 * 60 * 60))  // adjust as needed  // 250->15min // 10000->10hours
+                .setExpiration(new Date(System.currentTimeMillis() + 250 * 60 * 60L)) // 250->15min // 10000->10hours
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -72,4 +91,16 @@ public class JwtUtil {
         byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
         return Keys.hmacShaKeyFor(keyBytes);
     }
+
+    public void writeCustomErrorResponse(HttpServletResponse response, int httpStatus, int errorCode,
+                                         String errorType, String message) throws IOException {
+        response.setStatus(httpStatus);
+        response.setContentType("application/json");
+        String jsonResponse = String.format(
+                "{\"error\": \"%s\", \"errorCode\": %d, \"message\": \"%s\"}",
+                errorType, errorCode, message
+        );
+        response.getWriter().write(jsonResponse);
+    }
+
 }

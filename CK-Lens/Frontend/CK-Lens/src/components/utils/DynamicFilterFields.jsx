@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -10,19 +10,28 @@ import {
   Paper,
   Divider,
   Chip,
-  Badge,
   alpha,
   Tooltip,
+  TextField,
+  InputAdornment,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { fetchDistinctValues } from "../../services/costExplorerApis";
-import { FilterList, Check, Close } from "@mui/icons-material";
-
+import { FilterList, Check, Close, Search } from "@mui/icons-material";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  clearFilters,
+  updateFieldFilters,
+} from "../../redux/actions/filterActions";
 
 const DynamicFilterFields = ({ fields = [], onApplyFilters }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [activeField, setActiveField] = useState(null);
-  const [selectedValues, setSelectedValues] = useState({});
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredValues, setFilteredValues] = useState([]);
+
+  const dispatch = useDispatch();
+  const selectedValues = useSelector((state) => state.filters);
 
   const open = Boolean(anchorEl);
 
@@ -33,45 +42,101 @@ const DynamicFilterFields = ({ fields = [], onApplyFilters }) => {
     staleTime: 1000 * 60 * 5,
   });
 
+  // Update filtered values when distinct values change or search term changes
+  useEffect(() => {
+    if (!distinctValues) {
+      setFilteredValues([]);
+      return;
+    }
+
+    if (!searchTerm) {
+      setFilteredValues(distinctValues);
+      return;
+    }
+
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    const filtered = distinctValues.filter(
+      (value) => value && value.toLowerCase().includes(lowerSearchTerm)
+    );
+    setFilteredValues(filtered);
+  }, [distinctValues, searchTerm]);
+
   const handleClick = (event, field) => {
     setAnchorEl(event.currentTarget);
     setActiveField(field.fieldName);
+    // Reset search when opening a filter
+    setSearchTerm("");
   };
 
   const handleCheckboxChange = (value) => {
-    setSelectedValues((prev) => {
-      const current = prev[activeField] || [];
-      let updated = current.includes(value)
-        ? current.filter((v) => v !== value)
-        : [...current, value];
+    const current = selectedValues[activeField] || [];
+    let updated = current.includes(value)
+      ? current.filter((v) => v !== value)
+      : [...current, value];
 
-      if (updated.length === 0) {
-        const { [activeField]: _, ...rest } = prev;
-        return rest;
-      }
-
-      return { ...prev, [activeField]: updated };
-    });
+    dispatch(updateFieldFilters(activeField, updated));
   };
 
   const handleApply = () => {
     onApplyFilters?.(selectedValues);
     setAnchorEl(null);
     setActiveField(null);
+    setSearchTerm("");
   };
 
   const handleClearFilter = (fieldName) => {
-    setSelectedValues((prev) => {
-      const { [fieldName]: _, ...rest } = prev;
-      return rest;
-    });
+    dispatch(updateFieldFilters(fieldName, []));
     onApplyFilters?.(selectedValues);
+  };
+
+  const handleClearAll = () => {
+    dispatch(clearFilters());
+    onApplyFilters?.({});
+  };
+
+  const handleClosePopover = () => {
+    setAnchorEl(null);
+    setActiveField(null);
+    setSearchTerm("");
   };
 
   const getActiveFieldDisplayName = () => {
     const field = fields.find((f) => f.fieldName === activeField);
     return field?.displayName || activeField;
   };
+
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
+  };
+
+  // Select/deselect all filtered values
+  const handleSelectAll = (select) => {
+    const current = selectedValues[activeField] || [];
+
+    if (select) {
+      // Get all values that aren't already selected
+      const valuesToAdd = filteredValues.filter(
+        (value) => !current.includes(value)
+      );
+
+      if (valuesToAdd.length > 0) {
+        dispatch(updateFieldFilters(activeField, [...current, ...valuesToAdd]));
+      }
+    } else {
+      // Deselect only the filtered values
+      const updatedValues = current.filter(
+        (value) => !filteredValues.includes(value)
+      );
+      dispatch(updateFieldFilters(activeField, updatedValues));
+    }
+  };
+
+  // Calculate if all filtered items are selected
+  const allFilteredSelected =
+    filteredValues.length > 0 &&
+    filteredValues.every((value) =>
+      selectedValues[activeField]?.includes(value)
+    );
 
   return (
     <Paper
@@ -82,14 +147,34 @@ const DynamicFilterFields = ({ fields = [], onApplyFilters }) => {
         backgroundColor: "background.paper",
       }}
     >
-      <Typography
-        variant="subtitle1"
-        fontWeight="bold"
-        sx={{ mb: 2, display: "flex", alignItems: "center" }}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+        }}
       >
-        <FilterList sx={{ mr: 1 }} />
-        Filters
-      </Typography>
+        <Typography
+          variant="subtitle1"
+          fontWeight="bold"
+          sx={{ display: "flex", alignItems: "center" }}
+        >
+          <FilterList sx={{ mr: 1 }} />
+          Filters
+        </Typography>
+
+        {Object.keys(selectedValues).length > 0 && (
+          <Button
+            size="small"
+            color="error"
+            onClick={handleClearAll}
+            sx={{ textTransform: "none", fontWeight: "bold" }}
+          >
+            Clear All
+          </Button>
+        )}
+      </Box>
 
       <Divider sx={{ mb: 2 }} />
 
@@ -193,11 +278,11 @@ const DynamicFilterFields = ({ fields = [], onApplyFilters }) => {
         })}
       </Box>
 
-      {/* Popover content */}
+      {/* Popover for filter options */}
       <Popover
         open={open}
         anchorEl={anchorEl}
-        onClose={() => setAnchorEl(null)}
+        onClose={handleClosePopover}
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
         transformOrigin={{ vertical: "top", horizontal: "left" }}
         PaperProps={{
@@ -228,12 +313,87 @@ const DynamicFilterFields = ({ fields = [], onApplyFilters }) => {
             <Close
               fontSize="small"
               sx={{ cursor: "pointer" }}
-              onClick={() => setAnchorEl(null)}
+              onClick={handleClosePopover}
             />
           </Box>
 
+          {/* Search field */}
+          <Box
+            px={2}
+            pt={1.5}
+            pb={1}
+          >
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Search values..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search
+                      fontSize="small"
+                      color="action"
+                    />
+                  </InputAdornment>
+                ),
+                endAdornment: searchTerm ? (
+                  <InputAdornment position="end">
+                    <Tooltip title="Clear search">
+                      <Close
+                        fontSize="small"
+                        sx={{ cursor: "pointer" }}
+                        onClick={() => setSearchTerm("")}
+                      />
+                    </Tooltip>
+                  </InputAdornment>
+                ) : null,
+                sx: {
+                  borderRadius: 1.5,
+                  bgcolor: "background.paper",
+                },
+              }}
+            />
+          </Box>
+
+          {/* Select/Deselect All */}
+          {!isFetching && filteredValues.length > 0 && (
+            <Box
+              px={2}
+              pb={1}
+            >
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={allFilteredSelected}
+                    indeterminate={
+                      selectedValues[activeField]?.some((value) =>
+                        filteredValues.includes(value)
+                      ) && !allFilteredSelected
+                    }
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                    color="primary"
+                  />
+                }
+                label={
+                  <Typography
+                    variant="body2"
+                    fontWeight="medium"
+                  >
+                    {allFilteredSelected ? "Deselect all" : "Select all"} (
+                    {filteredValues.length})
+                  </Typography>
+                }
+              />
+              <Divider sx={{ mt: 1 }} />
+            </Box>
+          )}
+
+          {/* List of filter options */}
           <Box
             p={2}
+            pt={1}
             maxHeight={300}
             overflow="auto"
             display="flex"
@@ -247,27 +407,26 @@ const DynamicFilterFields = ({ fields = [], onApplyFilters }) => {
               >
                 <CircularProgress size={30} />
               </Box>
-            ) : distinctValues?.length ? (
-              <>
-                <Box
-                  display="flex"
-                  flexDirection="column"
-                  gap={0.5}
-                >
-                  {distinctValues.map((value) => (
-                    <FormControlLabel
-                      key={value}
-                      control={
-                        <Checkbox
-                          checked={
-                            selectedValues[activeField]?.includes(value) ||
-                            false
-                          }
-                          onChange={() => handleCheckboxChange(value)}
-                          color="primary"
-                        />
-                      }
-                      label={
+            ) : filteredValues?.length ? (
+              <Box
+                display="flex"
+                flexDirection="column"
+                gap={0.5}
+              >
+                {filteredValues.map((value) => (
+                  <FormControlLabel
+                    key={value}
+                    control={
+                      <Checkbox
+                        checked={
+                          selectedValues[activeField]?.includes(value) || false
+                        }
+                        onChange={() => handleCheckboxChange(value)}
+                        color="primary"
+                      />
+                    }
+                    label={
+                      <Tooltip title={value || "(Empty)"}>
                         <Typography
                           variant="body2"
                           sx={{
@@ -279,19 +438,27 @@ const DynamicFilterFields = ({ fields = [], onApplyFilters }) => {
                         >
                           {value || "(Empty)"}
                         </Typography>
-                      }
-                      sx={{
-                        borderRadius: 1,
-                        py: 0.5,
-                        px: 1,
-                        "&:hover": {
-                          bgcolor: alpha("#e0e0e0", 0.3),
-                        },
-                      }}
-                    />
-                  ))}
-                </Box>
-              </>
+                      </Tooltip>
+                    }
+                    sx={{
+                      borderRadius: 1,
+                      py: 0.5,
+                      px: 1,
+                      "&:hover": {
+                        bgcolor: alpha("#e0e0e0", 0.3),
+                      },
+                    }}
+                  />
+                ))}
+              </Box>
+            ) : searchTerm ? (
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ p: 2, textAlign: "center" }}
+              >
+                No matches found for "{searchTerm}".
+              </Typography>
             ) : (
               <Typography
                 variant="body2"
@@ -305,6 +472,7 @@ const DynamicFilterFields = ({ fields = [], onApplyFilters }) => {
 
           <Divider />
 
+          {/* Action buttons */}
           <Box
             p={1.5}
             display="flex"
@@ -314,7 +482,7 @@ const DynamicFilterFields = ({ fields = [], onApplyFilters }) => {
             <Button
               variant="outlined"
               size="small"
-              onClick={() => setAnchorEl(null)}
+              onClick={handleClosePopover}
               sx={{ flex: 1 }}
             >
               Cancel
@@ -324,7 +492,7 @@ const DynamicFilterFields = ({ fields = [], onApplyFilters }) => {
               size="small"
               onClick={handleApply}
               startIcon={<Check fontSize="small" />}
-              disabled={isFetching || !distinctValues?.length}
+              disabled={isFetching}
               sx={{ flex: 2 }}
             >
               Apply Filter

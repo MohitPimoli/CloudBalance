@@ -179,7 +179,7 @@ const UserManagementDashboard = () => {
             enableFilters
             renderCell={renderCell}
             onScroll={handleScroll}
-            filterableDropdownColumns={["firstName", "roleName"]}
+            filterableColumns={["firstName", "roleName"]}
           />
         )}
       </Container>

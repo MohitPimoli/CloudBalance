@@ -7,13 +7,15 @@ import com.cloudbalance.lens.dto.awsservices.EC2InstanceDTO;
 import com.cloudbalance.lens.dto.awsservices.RDSInstanceDTO;
 import com.cloudbalance.lens.entity.Account;
 import com.cloudbalance.lens.entity.User;
+import com.cloudbalance.lens.exception.ApiException;
+import com.cloudbalance.lens.exception.CustomException;
+import com.cloudbalance.lens.exception.GenericApplicationException;
 import com.cloudbalance.lens.exception.ResourceNotFoundException;
 import com.cloudbalance.lens.repository.AccountRepository;
 import com.cloudbalance.lens.repository.UserRepository;
 import com.cloudbalance.lens.service.awsservices.AWSService;
-import com.cloudbalance.lens.exception.ApiException;
+import com.cloudbalance.lens.utils.Constant;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -33,19 +35,21 @@ import java.util.stream.Collectors;
 @Slf4j
 public class AWSServiceImpl implements AWSService {
 
-    @Autowired
-    private AwsConfig awsConfig;
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private AccountRepository accountRepository;
+    private final AwsConfig awsConfig;
+    private final UserRepository userRepository;
+    private final AccountRepository accountRepository;
+    public AWSServiceImpl(AwsConfig awsConfig, UserRepository userRepository, AccountRepository accountRepository) {
+        this.awsConfig = awsConfig;
+        this.userRepository = userRepository;
+        this.accountRepository = accountRepository;
+    }
 
     @Override
     public List<EC2InstanceDTO> fetchEC2Instances(Long accountNumber) {
         log.info("Fetching EC2 instances for account number: {}", accountNumber);
-        Account account = accountRepository.getAccountByAccountNumber(accountNumber).orElseThrow(() -> new ResourceNotFoundException("Account not found with account number: " + accountNumber));
+        Account account = accountRepository.getAccountByAccountNumber(accountNumber).orElseThrow(() ->
+                new ResourceNotFoundException(Constant.ACCOUNT_NOT_FOUND + accountNumber));
 
         String roleArn = account.getArn();
         String region = account.getAccountRegion();
@@ -80,7 +84,8 @@ public class AWSServiceImpl implements AWSService {
     @Override
     public List<RDSInstanceDTO> fetchRDSInstances(Long accountNumber) {
         log.info("Fetching RDS instances for account number: {}", accountNumber);
-        Account account = accountRepository.getAccountByAccountNumber(accountNumber).orElseThrow(() -> new ResourceNotFoundException("Account not found with account number: " + accountNumber));
+        Account account = accountRepository.getAccountByAccountNumber(accountNumber).orElseThrow(() ->
+                new ResourceNotFoundException(Constant.ACCOUNT_NOT_FOUND + accountNumber));
 
         String roleArn = account.getArn();
         String region = account.getAccountRegion();
@@ -111,7 +116,8 @@ public class AWSServiceImpl implements AWSService {
     @Override
     public List<ASGDTO> fetchAutoScalingGroups(Long accountNumber) {
         log.info("Fetching ASG instances for account number: {}", accountNumber);
-        Account account = accountRepository.getAccountByAccountNumber(accountNumber).orElseThrow(() -> new ResourceNotFoundException("Account not found with account number: " + accountNumber));
+        Account account = accountRepository.getAccountByAccountNumber(accountNumber).orElseThrow(() ->
+                new ResourceNotFoundException(Constant.ACCOUNT_NOT_FOUND + accountNumber));
 
         String roleArn = account.getArn();
         String region = account.getAccountRegion();
@@ -153,7 +159,7 @@ public class AWSServiceImpl implements AWSService {
         if (isCustomer) {
             User user = userRepository.findByUsername(username).orElseThrow(() -> {
                 log.warn("User not found with username: {}", username);
-                return new ResourceNotFoundException("User not found with username: " + username);
+                return new CustomException.UserNotFoundException(Constant.USER_NOT_FOUND_WITH_USERNAME + username);
             });
             return fetchLinkedAccounts(user.getId());
 
@@ -171,8 +177,9 @@ public class AWSServiceImpl implements AWSService {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> {
                         log.warn("User not found with ID: {}", userId);
-                        return new ResourceNotFoundException("User not found with ID: " + userId);
+                        return new CustomException.UserNotFoundException(Constant.USER_NOT_FOUND_WITH_ID + userId);
                     });
+
             List<AssignAccountResponse> accountDtos = user.getAssignedAccounts().stream()
                     .map(userCloudAccount -> {
                         Account account = userCloudAccount.getCloudAccount();
@@ -191,11 +198,11 @@ public class AWSServiceImpl implements AWSService {
             log.info("Found {} linked accounts for userId: {}", accountDtos.size(), userId);
             return accountDtos;
 
-        } catch (ResourceNotFoundException e) {
+        } catch (CustomException.UserNotFoundException e) {
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error while fetching linked accounts for userId: {}", userId, e);
-            throw new RuntimeException("Failed to fetch linked accounts", e);
+            throw new GenericApplicationException("Failed to fetch linked accounts", e.getCause());
         }
     }
 

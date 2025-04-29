@@ -4,6 +4,7 @@ import storage from 'redux-persist/lib/storage';
 import { thunk } from 'redux-thunk';
 import authReducer from './reducers/authReducer';
 import sidebarReducer from './reducers/sidebarReducers';
+import filterReducer from "./reducers/filterReducer";
 
 const persistConfig = {
   key: 'root',
@@ -14,6 +15,7 @@ const persistConfig = {
 const rootReducer = combineReducers({
   auth: authReducer,
   sidebar: sidebarReducer,
+  filters: filterReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

@@ -55,12 +55,17 @@ const AccountIdAssociation = ({ userid, role, onLinkedAccountsChange }) => {
     notifyParentOfChanges();
   }, [notifyParentOfChanges]);
 
-  const toggleSelection = (account, list, setter) => {
-    const exists = list.some((item) => item.accountId === account.accountId);
-    if (exists) {
-      setter(list.filter((item) => item.accountId !== account.accountId));
+  const toggleSelection = (account, selectedList, setSelectedList) => {
+    console.log("account", account);
+    const isSelected = selectedList.some(
+      (a) => a.accountNumber === account.accountNumber
+    );
+    if (isSelected) {
+      setSelectedList(
+        selectedList.filter((a) => a.accountNumber !== account.accountNumber)
+      );
     } else {
-      setter([...list, account]);
+      setSelectedList([...selectedList, { ...account }]);
     }
   };
 
@@ -69,7 +74,9 @@ const AccountIdAssociation = ({ userid, role, onLinkedAccountsChange }) => {
     setAvailableAccounts(
       availableAccounts.filter(
         (acc) =>
-          !selectedAvailable.find((sel) => sel.accountId === acc.accountId)
+          !selectedAvailable.find(
+            (sel) => sel.accountNumber === acc.accountNumber
+          )
       )
     );
     setSelectedAvailable([]);
@@ -80,14 +87,16 @@ const AccountIdAssociation = ({ userid, role, onLinkedAccountsChange }) => {
     setAssociatedAccounts(
       associatedAccounts.filter(
         (acc) =>
-          !selectedAssociated.find((sel) => sel.accountId === acc.accountId)
+          !selectedAssociated.find(
+            (sel) => sel.accountNumber === acc.accountNumber
+          )
       )
     );
     setSelectedAssociated([]);
   };
 
   const filteredAvailable = availableAccounts.filter((acc) =>
-    `${acc.accountHolderName} ${acc.accountId}`
+    `${acc.accountHolderName} ${acc.accountNumber}`
       .toLowerCase()
       .includes(searchTerm.toLowerCase())
   );
@@ -183,20 +192,19 @@ const AccountIdAssociation = ({ userid, role, onLinkedAccountsChange }) => {
                 overflowY: "scroll",
               }}
             >
-              <List dense>
+              <List>
                 {filteredAvailable.map((account) => (
                   <ListItem
-                    key={account.accountId}
+                    key={account.accountNumber}
                     sx={{
                       mb: 0.5,
                       borderRadius: 1,
-
                       border: "1px solid lightgray",
                       "&:hover": {
                         bgcolor: "#dfe9f5",
                       },
                     }}
-                    button="true"
+                    button={true}
                     onClick={() =>
                       toggleSelection(
                         account,
@@ -208,7 +216,7 @@ const AccountIdAssociation = ({ userid, role, onLinkedAccountsChange }) => {
                     <ListItemIcon>
                       <Checkbox
                         checked={selectedAvailable.some(
-                          (a) => a.accountId === account.accountId
+                          (a) => a.accountNumber === account.accountNumber
                         )}
                       />
                     </ListItemIcon>
@@ -320,7 +328,7 @@ const AccountIdAssociation = ({ userid, role, onLinkedAccountsChange }) => {
                           bgcolor: "#dfe9f5",
                         },
                       }}
-                      key={account.accountId}
+                      key={account.accountNumber}
                       button="true"
                       onClick={() =>
                         toggleSelection(
@@ -333,7 +341,7 @@ const AccountIdAssociation = ({ userid, role, onLinkedAccountsChange }) => {
                       <ListItemIcon>
                         <Checkbox
                           checked={selectedAssociated.some(
-                            (a) => a.accountId === account.accountId
+                            (a) => a.accountNumber === account.accountNumber
                           )}
                         />
                       </ListItemIcon>

@@ -4,31 +4,18 @@ import {
   Box,
   Button,
   Stack,
-  Typography,
-  Autocomplete,
-  TextField,
+  Typography
 } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
 import EC2 from "../awsservices/EC2";
 import RDS from "../awsservices/RDS";
 import ASG from "../awsservices/ASG";
 import { House } from "lucide-react";
-import { useSelector } from "react-redux";
-import { fetchAccounts } from "../../services/awsServiceApis";
 import AwsAccountSelect from "../utils/AwsAccountSelect";
 
 const AWSServiceWrapper = () => {
   const [selectedService, setSelectedService] = useState("EC2");
   const [selectedAccount, setSelectedAccount] = useState("");
   const navigate = useNavigate();
-  const user = useSelector((state) => state.auth.user);
-  const id = user?.id;
-
-  const { data: accounts = [], isLoading } = useQuery({
-    queryKey: ["accounts", id],
-    queryFn: () => fetchAccounts(),
-    enabled: !!id,
-  });
 
   const renderComponent = (selectedAccount) => {
     switch (selectedService) {

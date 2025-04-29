@@ -19,7 +19,9 @@ import lombok.NoArgsConstructor;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserDTO {
 
+    @NotBlank(message = "id is required", groups = OnUpdate.class)
     private Long id;
+
     private String username;
 
     @NotBlank(message = "First name is required", groups = OnCreate.class)

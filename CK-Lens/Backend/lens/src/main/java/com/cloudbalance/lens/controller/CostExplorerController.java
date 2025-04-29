@@ -5,10 +5,10 @@ import com.cloudbalance.lens.dto.costexplorer.CostExplorerResponseDTO;
 import com.cloudbalance.lens.dto.costexplorer.DisplayNameDTO;
 import com.cloudbalance.lens.service.costexplorer.CostExplorerService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @Slf4j
@@ -16,9 +16,10 @@ import java.util.List;
 @RequestMapping("/cost")
 public class CostExplorerController {
 
-    @Autowired
-    private CostExplorerService costExplorerService;
-
+    private final CostExplorerService costExplorerService;
+    public CostExplorerController(CostExplorerService costExplorerService) {
+        this.costExplorerService = costExplorerService;
+    }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'READ-ONLY','CUSTOMER')")
     @GetMapping("/filter")

@@ -19,7 +19,7 @@ public class ColumnName {
     private Long id;
 
     @Column(name = "column_name", nullable = false, unique = true)
-    private String columnName;
+    private String nameOfColumn;
 
     @Column(name = "display_name", nullable = false, unique = true)
     private String displayName;
@@ -29,5 +29,5 @@ public class ColumnName {
 
     @Builder.Default
     @Column(name = "visible")
-    private boolean orphan = true;
+    private boolean visible = true;
 }

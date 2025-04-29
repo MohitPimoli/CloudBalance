@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate,Navigate } from "react-router-dom";
 import {
   Box,
   TextField,
@@ -17,8 +17,11 @@ import logo from "../assets/logo.png";
 import { useDispatch } from "react-redux";
 import { loginSuccess } from "../redux/actions/authActions";
 import { loginUser, encryptPass } from "../services/authServiceApis";
+import { useSelector } from "react-redux";
 
 const LoginPage = () => {
+  const reduxToken = useSelector((state) => state.auth.token);
+
   const loginForm = FormConfig(false).filter(
     (field) => field.name === "username" || field.name === "password"
   );
@@ -93,7 +96,6 @@ const LoginPage = () => {
 
     try {
       const encryptedPassword = await encryptPass(formValues.password);
-      console.log("password", encryptedPassword);
       const payload = {
         username: formValues.username,
         password: encryptedPassword,
@@ -104,7 +106,11 @@ const LoginPage = () => {
       setResponseMessage(data.message || "Login successful");
       navigate("/");
     } catch (err) {
-      if (err?.status === 429) {
+      if (err?.status === 401) {
+        setError(
+          err?.response?.data?.message || "Invalid username or password"
+        );
+      } else if (err?.status === 429) {
         setError("Too many requests. Please try again later.");
       } else if (err?.status === 408) {
         setError("Request timed out. Please try again.");
@@ -118,6 +124,14 @@ const LoginPage = () => {
     }
   };
 
+  if (!!reduxToken) {
+    return (
+      <Navigate
+        to="/"
+        replace
+      />
+    );
+  }
   return (
     <Box
       sx={{
