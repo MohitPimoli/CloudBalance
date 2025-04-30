@@ -11,11 +11,20 @@ import java.util.Optional;
 @Repository
 public interface AccountRepository extends JpaRepository<Account,Long> {
 
+    /**
+     * Finds an account by its ARN or account number.
+     * @param number
+     * @return  List containing Account entity
+     */
+
     @Query("SELECT a FROM Account a WHERE a.arn = :arn OR a.accountNumber = :number")
     List<Account> findByArnOrNumber(@Param("arn") String arn, @Param("number") Long number);
 
-    @Query("SELECT a FROM Account a WHERE a.accountNumber = :number")
-    Optional<Account> getAccountByAccountNumber(@Param("number") Long number);
+    /**
+     * Finds an account by its ARN.
+     * @param number
+     * @return Optional of Account entity
+     */
 
     @Query("SELECT a FROM Account a WHERE a.accountNumber = :number")
     Optional<Account> findByAccountNumber( @Param("number") Long number);

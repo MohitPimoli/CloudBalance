@@ -10,8 +10,20 @@ import java.time.LocalDateTime;
 
 @Repository
 public interface BlackListedTokenRepository extends JpaRepository<BlackListedToken, String> {
+
+    /**
+     * Check if a token is blacklisted.
+     * @param token
+     * @return if token exists or not
+     */
+
     @Query("SELECT COUNT(b) > 0 FROM BlackListedToken b WHERE b.token = :token")
     boolean existsByToken(@Param("token")String token);
+
+    /**
+     * Delete all blacklisted tokens that have expired.
+     * @param time
+     */
 
     @Modifying
     @Query("DELETE FROM BlackListedToken b WHERE b.tokenExpiry < :time")

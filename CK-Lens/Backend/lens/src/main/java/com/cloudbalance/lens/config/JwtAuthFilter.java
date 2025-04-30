@@ -44,7 +44,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             log.warn("Missing or invalid Authorization header");
-            jwtUtil.writeCustomErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, 4001,
+            jwtUtil.writeCustomErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, 1001,
                     "InvalidAuthorizationHeader", "Missing or invalid Authorization header.");
             return;
         }

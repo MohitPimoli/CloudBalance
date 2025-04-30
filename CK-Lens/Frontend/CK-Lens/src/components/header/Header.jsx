@@ -18,7 +18,7 @@ import { toggleSidebar } from "../../redux/actions/sidebarAction";
 import { persistor } from "../../redux/store";
 import { UsersRound, LogOut } from "lucide-react";
 import { logoutUser } from "../../services/authServiceApis";
-
+import theme from "../theme/Theme";
 const Header = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Typography, Box } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import DynamicReusableTable from "../utils/DynamicReusableTable";
@@ -6,14 +6,8 @@ import config from "../../config/AwsServiceColumnNameConfig";
 import getStatusColor from "../utils/statusColorUtils";
 import { fetchEC2Instances } from "../../services/awsServiceApis";
 
-const EC2 = ({ accountNumber }) => {
-  const {
-    data,
-    isLoading,
-    isFetching,
-    isError,
-    error
-  } = useQuery({
+const EC2 = ({ accountNumber, setSnackbar }) => {
+  const { data, isLoading, isFetching, isError, error } = useQuery({
     queryKey: ["ec2-instances", accountNumber],
     queryFn: () => fetchEC2Instances(accountNumber),
     retry: 1,
@@ -52,19 +46,34 @@ const EC2 = ({ accountNumber }) => {
     return row[key];
   };
 
+  useEffect(() => {
+    if (isError) {
+      setSnackbar({
+        open: true,
+        message: error?.response?.data?.message || "Please try again later.",
+        severity: "error",
+      });
+    }
+  }, [isError, error]);
+
   return (
-    <DynamicReusableTable
-      columns={columns}
-      data={Array.isArray(data?.data) ? data?.data : []}
-      isLoading={isLoading || isFetching}
-      isError={isError}
-      error={!!error ? error?.response.data.message : "Please try again later."}
-      renderCell={renderCell}
-      enableFilters
-      getRowId={(row) => row.id}
-      filterableDropdownColumns={["id", "name", "region", "status"]}
-      headerColor="#1e3a8a"
-    />
+    <>
+      <DynamicReusableTable
+        columns={columns}
+        data={Array.isArray(data?.data) ? data?.data : []}
+        isLoading={isLoading || isFetching}
+        isError={isError}
+        error={
+          !!error ? error?.response.data.message : "Please try again later."
+        }
+        renderCell={renderCell}
+        enableFilters
+        getRowId={(row) => row.id}
+        filterableDropdownColumns={["id", "name", "region", "status"]}
+        headerColor="#1e3a8a"
+        filterableColumns={["id", "name", "region", "status"]}
+      />
+    </>
   );
 };
 

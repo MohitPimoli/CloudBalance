@@ -1,5 +1,6 @@
 package com.cloudbalance.lens.service.onboarding.impl;
 
+import com.cloudbalance.lens.dto.GlobalMessageDTO;
 import com.cloudbalance.lens.dto.onboarding.OnboardingRequest;
 import com.cloudbalance.lens.entity.Account;
 import com.cloudbalance.lens.exception.ResourceAlreadyExistsException;
@@ -20,7 +21,7 @@ public class OnboardingServiceImpl implements OnboardingService {
     }
 
     @Override
-    public String registerAwsAccount(OnboardingRequest onboardingRequest) {
+    public GlobalMessageDTO registerAwsAccount(OnboardingRequest onboardingRequest) {
         log.info("Registering new AWS account: {}", onboardingRequest);
 
         String arn = onboardingRequest.getArn();
@@ -50,6 +51,8 @@ public class OnboardingServiceImpl implements OnboardingService {
         Account savedAccount = accountRepository.save(account);
         log.info("Successfully onboarded AWS account: ID={}, Name={}", savedAccount.getId(),
                 savedAccount.getAccountHolderName());
-        return "AWS account added successfully";
+        return GlobalMessageDTO.builder()
+                .message("AWS account added successfully")
+                .build();
     }
 }

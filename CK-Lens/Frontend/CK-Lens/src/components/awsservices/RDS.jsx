@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Typography, Box } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import DynamicReusableTable from "../utils/DynamicReusableTable";
@@ -6,14 +6,8 @@ import config from "../../config/AwsServiceColumnNameConfig";
 import getStatusColor from "../utils/statusColorUtils";
 import { fetchRDSInstances } from "../../services/awsServiceApis";
 
-const RDS = ({ accountNumber }) => {
-  const {
-    data,
-    isLoading,
-    isFetching,
-    isError,
-    error
-  } = useQuery({
+const RDS = ({ accountNumber,setSnackbar }) => {
+  const { data, isLoading, isFetching, isError, error } = useQuery({
     queryKey: ["rds-instances", accountNumber],
     queryFn: () => fetchRDSInstances(accountNumber),
     retry: 1,
@@ -51,7 +45,15 @@ const RDS = ({ accountNumber }) => {
 
     return row[key];
   };
-
+  useEffect(() => {
+    if (isError) {
+      setSnackbar({
+        open: true,
+        message: error?.response?.data?.message || "Please try again later.",
+        severity: "error",
+      });
+    }
+  }, [isError, error]);
   return (
     <DynamicReusableTable
       columns={columns}
@@ -63,6 +65,7 @@ const RDS = ({ accountNumber }) => {
       enableFilters
       getRowId={(row) => row.id}
       headerColor="#1e3a8a"
+      filterableColumns={["id", "name", "region", "engine", "status"]}
     />
   );
 };

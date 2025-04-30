@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import DynamicReusableTable from "./DynamicReusableTable"; // Adjust path if needed
+import DynamicReusableTable from "./DynamicReusableTable";
 import { Typography } from "@mui/material";
 
 const CostDataTable = ({ data = [], appliedGroupBy }) => {

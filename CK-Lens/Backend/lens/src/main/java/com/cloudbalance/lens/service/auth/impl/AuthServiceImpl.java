@@ -1,6 +1,7 @@
 package com.cloudbalance.lens.service.auth.impl;
 
 import com.cloudbalance.lens.config.JwtUtil;
+import com.cloudbalance.lens.dto.GlobalMessageDTO;
 import com.cloudbalance.lens.dto.auth.AuthRequestDTO;
 import com.cloudbalance.lens.dto.auth.AuthResponseDTO;
 import com.cloudbalance.lens.dto.auth.CustomUserDetails;
@@ -115,7 +116,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public String logout(HttpServletRequest request) {
+    public GlobalMessageDTO logout(HttpServletRequest request) {
         try {
             String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -147,13 +148,16 @@ public class AuthServiceImpl implements AuthService {
             SecurityContextHolder.clearContext();
             log.info("User logged out successfully. Tokens blacklisted.");
 
-            return "Logout Successfully...";
+            return GlobalMessageDTO.builder()
+                    .message("Logout Successfully").build();
         } catch (TokenMissingException e) {
             log.error("Token missing during logout", e);
-            return "Token missing during logout";
+            return GlobalMessageDTO.builder()
+                    .message("Error during logout").build();
         } catch (Exception e) {
             log.error("Error during logout", e);
-            return "Error during logout";
+            return GlobalMessageDTO.builder()
+                    .message("Error during logout").build();
         }
     }
 

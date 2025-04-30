@@ -2,12 +2,12 @@ import React, { useState } from "react";
 import { Box } from "@mui/material";
 import ThankYouPage from "../../page/ThankYouPage";
 import config from "../../config/OnboardingCodeBoxConfig";
-import { Snackbar, Alert } from "@mui/material";
 import Step1CreateIAMRole from "../../components/onboardingsteps/Step1CreateIAMRole";
 import Step2IAMPolicies from "../../components/onboardingsteps/Step2IAMPolicies";
 import Step3CreateCUR from "../../components/onboardingsteps/Step3CreateCUR";
 import OnboardingNavigationController from "../utils/OnboardingNavigationController";
 import { registerAWSAccount } from "../../services/onboardingServiceApis";
+import SnackBar from "../utils/SnackBar";
 
 const steps = [Step1CreateIAMRole, Step2IAMPolicies, Step3CreateCUR];
 const stepTitles = ["IAM Role", "IAM Policies", "Cost & Usage Report"];
@@ -51,6 +51,11 @@ const OnboardingWrapper = () => {
     if (activeStep === steps.length - 1) {
       try {
         const response = await registerAWSAccount(formValues);
+        setSnackbar({
+          open: true,
+          message: response?.message || "Account registered successfully.",
+          severity: "success",
+        });
         setIsSubmitted(true);
       } catch (err) {
         if (err?.status === 409) {
@@ -94,7 +99,21 @@ const OnboardingWrapper = () => {
   };
 
   const handleCancel = () => {
-    console.log("Onboarding canceled");
+    setFormValues({
+      arn: "",
+      accountName: "",
+      accountNumber: "",
+      accountRegion: "",
+    });
+    setSnackbar({
+      open: true,
+      message: "Onboarding canceled",
+      severity: "info",
+    });
+    setActiveStep(0);
+    setTouched({});
+    setIsSubmitted(false);
+    setConflictField(null);
   };
 
   if (isSubmitted) {
@@ -103,6 +122,10 @@ const OnboardingWrapper = () => {
 
   return (
     <Box sx={{ mt: 4 }}>
+      <SnackBar
+        setSnackbar={setSnackbar}
+        snackbar={snackbar}
+      />
       {activeStep === 0 ? (
         <StepComponent
           formValues={formValues}
@@ -124,20 +147,6 @@ const OnboardingWrapper = () => {
         backLabel={backLabel}
         nextLabel={nextLabel}
       />
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert
-          onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-          severity={snackbar.severity}
-          sx={{ width: "100%" }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 };

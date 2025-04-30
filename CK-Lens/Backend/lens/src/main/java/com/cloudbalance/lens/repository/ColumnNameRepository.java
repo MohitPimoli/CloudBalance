@@ -12,17 +12,20 @@ import java.util.Optional;
 @Repository
 public interface ColumnNameRepository extends JpaRepository<ColumnName, String> {
 
-    @Query("SELECT c FROM ColumnName c WHERE c.nameOfColumn = :columnName")
-    Optional<ColumnName> findByColumnName(@Param("columnName") String columnName);
-
-    @Query("SELECT c FROM ColumnName c WHERE c.nameOfColumn IN :columnNames")
-    List<ColumnName> findByColumnNames(@Param("columnNames") List<String> columnNames);
-
-    @Query("SELECT c FROM ColumnName c")
-    List<ColumnName> findAllColumnNames();
+    /**
+     * Find a ColumnName entity by its field name.
+     *
+     * @param fieldName the field name of the column
+     * @return an Optional containing the ColumnName entity if found, or empty if not found
+     */
 
     @Query("SELECT c FROM ColumnName c WHERE c.fieldName = :fieldName")
     Optional<ColumnName> findByFieldName(@Param("fieldName") String fieldName);
+
+    /**
+     * Fetch displayName and fieldName
+     * @return a List of DisplayNameDTO
+     */
 
     @Query("SELECT new com.cloudbalance.lens.dto.costexplorer.DisplayNameDTO(c.displayName, c.fieldName) from ColumnName c ")
     List<DisplayNameDTO> getAllDisplayName();

@@ -47,7 +47,7 @@ const AccountIdAssociation = ({ userid, role, onLinkedAccountsChange }) => {
 
   const notifyParentOfChanges = useCallback(() => {
     if (onLinkedAccountsChange) {
-      onLinkedAccountsChange(associatedAccounts);
+      onLinkedAccountsChange(associatedAccounts, role);
     }
   }, [associatedAccounts, onLinkedAccountsChange]);
 
@@ -56,7 +56,6 @@ const AccountIdAssociation = ({ userid, role, onLinkedAccountsChange }) => {
   }, [notifyParentOfChanges]);
 
   const toggleSelection = (account, selectedList, setSelectedList) => {
-    console.log("account", account);
     const isSelected = selectedList.some(
       (a) => a.accountNumber === account.accountNumber
     );

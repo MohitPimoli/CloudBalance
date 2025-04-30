@@ -12,6 +12,7 @@ import { ChevronDown, SlidersHorizontal } from "lucide-react";
 import CostExplorerDataWrapper from "../components/utils/CostExplorerDataWrapper";
 import { useQuery } from "@tanstack/react-query";
 import { fetchDisplayNames } from "../services/costExplorerApis";
+import LoadingScreen from "../page/LoadingScreen";
 
 const CostExplorerLayout = ({ selectedAccount }) => {
   const [toggleFilter, setToggleFilter] = useState(false);
@@ -58,6 +59,9 @@ const CostExplorerLayout = ({ selectedAccount }) => {
     updateOrderWithSelected(selected.displayName);
   };
 
+  if (isLoading) {
+    return <LoadingScreen message="Fetching Cost Data...." />;
+  }
   return (
     <Box sx={{ p: 2 }}>
       <Box

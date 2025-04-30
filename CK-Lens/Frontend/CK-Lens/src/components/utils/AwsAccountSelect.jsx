@@ -20,6 +20,7 @@ const AwsAccountSelect = ({ selectedAccount, setSelectedAccount, label }) => {
       setSelectedAccount(accounts[0].accountNumber);
     }
   }, []);
+
   return (
     <Box minWidth={250}>
       <Autocomplete

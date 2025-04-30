@@ -20,11 +20,17 @@ public class AwsConfig {
     private final String secretAccessKey = System.getenv("AWS_SECRET_ACCESS_KEY");
     private final String region = System.getenv("AWS_REGION");
 
+
+
     public AwsCredentialsProvider defaultCredentialsProvider() {
         return StaticCredentialsProvider.create(
                 AwsBasicCredentials.create(accessKeyId, secretAccessKey)
         );
     }
+
+    /**
+      * Create an STS client with the specified region.
+     */
 
     @Bean
     public StsClient stsClient() {
@@ -33,6 +39,10 @@ public class AwsConfig {
          .credentialsProvider(defaultCredentialsProvider())
                 .build();
     }
+
+    /**
+      * AWS assume role credentials provider for given ARN.
+     */
 
     public AwsCredentialsProvider assumeRoleCredentials(StsClient stsClient, String roleArn) {
         return StsAssumeRoleCredentialsProvider.builder()
@@ -44,6 +54,10 @@ public class AwsConfig {
                 .build();
     }
 
+    /**
+      * Create an EC2 client with the specified credentials provider and region.
+     */
+
     public Ec2Client ec2Client(AwsCredentialsProvider credentialsProvider, String region) {
         return Ec2Client.builder()
                 .region(Region.of(region))
@@ -51,12 +65,20 @@ public class AwsConfig {
                 .build();
     }
 
+    /**
+      * Create an AutoScaling client with the specified credentials provider and region.
+     */
+
     public AutoScalingClient autoScalingClient(AwsCredentialsProvider credentialsProvider, String region) {
         return AutoScalingClient.builder()
                 .region(Region.of(region))
                 .credentialsProvider(credentialsProvider)
                 .build();
     }
+
+    /**
+      * Create an RDS client with the specified credentials provider and region.
+     */
 
     public RdsClient rdsClient(AwsCredentialsProvider credentialsProvider, String region) {
         return RdsClient.builder()

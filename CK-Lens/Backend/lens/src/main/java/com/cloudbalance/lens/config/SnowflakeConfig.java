@@ -12,13 +12,9 @@ import javax.sql.DataSource;
 @Configuration
 @Slf4j
 public class SnowflakeConfig {
-
-    //    private final String url = System.getenv("SNOWFLAKE_URL");
-//    private final String username = System.getenv("SNOWFLAKE_USERNAME");
-//    private final String password = System.getenv("SNOWFLAKE_PASSWORD");
-    private final String url = System.getenv("URL");
-    private final String username = System.getenv("UNAME");
-    private final String password = System.getenv("PASS");
+    private final String url = System.getenv("SNOWFLAKE_URL");
+    private final String username = System.getenv("SNOWFLAKE_USERNAME");
+    private final String password = System.getenv("SNOWFLAKE_PASSWORD");
     private final String warehouse = System.getenv("SNOWFLAKE_WAREHOUSE");
 
     @Bean(name = "snowflakeDataSource")

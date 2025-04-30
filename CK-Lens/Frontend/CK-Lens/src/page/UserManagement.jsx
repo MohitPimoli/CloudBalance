@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Button, Container, Typography, IconButton } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
@@ -10,8 +10,8 @@ import UserFilterToggle from "../components/utils/UserFilterToggle";
 import DynamicReusableTable from "../components/utils/DynamicReusableTable";
 import config from "../config/userManagementTableColumns";
 import { fetchUsers } from "../services/userManagementServiceApis";
+import LoadingScreen from "../page/LoadingScreen";
 
-//import LoadingScreen from "../../LoadingScreen/LoadingScreen";
 const UserManagementDashboard = () => {
   const navigate = useNavigate();
   const [filter, setFilter] = useState("active");
@@ -163,7 +163,7 @@ const UserManagementDashboard = () => {
 
         {/* Table */}
         {isLoading && allUsers.length === 0 ? (
-          <Typography>Fetching Users...</Typography>
+          <LoadingScreen message="Fetching users..." />
         ) : isError ? (
           <Typography color="error">
             Error Fetching Users:{" "}

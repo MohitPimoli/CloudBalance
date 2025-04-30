@@ -10,6 +10,7 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -25,6 +26,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
     private final CustomUserDetailsServiceImpl userDetailsService;
     private final JwtAuthFilter jwtAuthFilter;
@@ -33,6 +35,12 @@ public class SecurityConfig {
         this.jwtAuthFilter = jwtAuthFilter;
         this.userDetailsService = userDetailsService;
     }
+
+    /**
+     * Configuring security filter chain
+     * @param http
+     * @throws Exception
+     */
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -50,6 +58,11 @@ public class SecurityConfig {
                 .build();
     }
 
+    /**
+     * Creating Bean of AuthenticationProvider
+     * @return authProvider
+     */
+
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -58,15 +71,32 @@ public class SecurityConfig {
         return authProvider;
     }
 
+    /**
+     * Creating Bean of AuthenticationManager
+     * @param config
+     * @return AuthenticationManager
+     * @throws Exception
+     */
+
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
+    /**
+     * Creating Bean of Password Encoder
+     * @return Bean of BCryptPasswordEncoder
+     */
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
+    /**
+     * Configuring CORS
+     * @return cors config
+     */
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
