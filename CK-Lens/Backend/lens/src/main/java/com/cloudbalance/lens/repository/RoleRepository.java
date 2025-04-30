@@ -10,7 +10,14 @@ import java.util.Optional;
 @Repository
 public interface RoleRepository extends JpaRepository<Role,Long> {
 
+    /**
+     * Fetch role id from given roleName
+     * @param roleName
+     * @return Optional of Role entity
+     */
+
     @Query("SELECT r FROM Role r WHERE r.name = :roleName")
     Optional<Role> findRoleIdByRoleName(@Param("roleName") String roleName);
 
 }
+

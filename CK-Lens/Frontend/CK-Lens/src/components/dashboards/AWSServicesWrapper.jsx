@@ -1,30 +1,50 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Box,
-  Button,
-  Stack,
-  Typography
-} from "@mui/material";
+import { Box, Button, Stack, Typography } from "@mui/material";
 import EC2 from "../awsservices/EC2";
 import RDS from "../awsservices/RDS";
 import ASG from "../awsservices/ASG";
 import { House } from "lucide-react";
 import AwsAccountSelect from "../utils/AwsAccountSelect";
+import SnackBar from "../utils/SnackBar";
 
 const AWSServiceWrapper = () => {
   const [selectedService, setSelectedService] = useState("EC2");
   const [selectedAccount, setSelectedAccount] = useState("");
   const navigate = useNavigate();
 
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "error",
+  });
+
   const renderComponent = (selectedAccount) => {
     switch (selectedService) {
       case "EC2":
-        return <EC2 accountNumber={selectedAccount} />;
+        return (
+          <EC2
+            accountNumber={selectedAccount}
+            snackbar={snackbar}
+            setSnackbar={setSnackbar}
+          />
+        );
       case "RDS":
-        return <RDS accountNumber={selectedAccount} />;
+        return (
+          <RDS
+            accountNumber={selectedAccount}
+            snackbar={snackbar}
+            setSnackbar={setSnackbar}
+          />
+        );
       case "ASG":
-        return <ASG accountNumber={selectedAccount} />;
+        return (
+          <ASG
+            accountNumber={selectedAccount}
+            snackbar={snackbar}
+            setSnackbar={setSnackbar}
+          />
+        );
       default:
         return null;
     }
@@ -71,6 +91,11 @@ const AWSServiceWrapper = () => {
           {selectedService}
         </Typography>
       </Stack>
+
+      <SnackBar
+        snackbar={snackbar}
+        setSnackbar={setSnackbar}
+      />
 
       {/* Service Buttons & Account Select */}
       <Stack

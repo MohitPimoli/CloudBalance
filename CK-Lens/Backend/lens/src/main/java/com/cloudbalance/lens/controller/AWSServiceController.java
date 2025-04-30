@@ -18,12 +18,14 @@ import java.util.List;
 @RequestMapping("/aws")
 public class AWSServiceController {
 
-
     private final AWSService awsService;
-
     public AWSServiceController(AWSService awsService) {
         this.awsService = awsService;
     }
+
+    /**
+     fetch EC2 Instances
+     */
 
     @PreAuthorize("hasAnyRole('ADMIN', 'READ-ONLY','CUSTOMER')")
     @GetMapping("/ec2")
@@ -34,6 +36,11 @@ public class AWSServiceController {
         }
         return ResponseEntity.ok(ec2Instances);
     }
+
+    /**
+     fetch RDS Instances
+     */
+
     @PreAuthorize("hasAnyRole('ADMIN', 'READ-ONLY','CUSTOMER')")
     @GetMapping("/rds")
     public ResponseEntity<List<RDSInstanceDTO>> getRdsInstances(@RequestParam("accountNumber") Long accountNumber) {
@@ -43,6 +50,10 @@ public class AWSServiceController {
         }
         return ResponseEntity.ok(rdsInstances);
     }
+
+    /**
+     fetch Auto Scaling Groups
+     */
     @PreAuthorize("hasAnyRole('ADMIN', 'READ-ONLY','CUSTOMER')")
     @GetMapping("/asg")
     public ResponseEntity<List<ASGDTO>> getAutoScalingGroups(@RequestParam("accountNumber") Long accountNumber) {
@@ -53,6 +64,10 @@ public class AWSServiceController {
         return ResponseEntity.ok(asgGroups);
     }
 
+    /**
+     fetch linked accounts
+     */
+
     @PreAuthorize("hasAnyRole('ADMIN', 'READ-ONLY','CUSTOMER')")
     @GetMapping("/linked-accounts")
     public ResponseEntity<List<AssignAccountResponse>> getLinkedAccounts(@RequestParam("userId") Long userId){
@@ -60,12 +75,20 @@ public class AWSServiceController {
         return ResponseEntity.ok(accounts);
     }
 
+    /**
+     fetch all accounts
+     */
+
     @PreAuthorize("hasAnyRole('ADMIN', 'READ-ONLY')")
     @GetMapping("/all-accounts")
     public ResponseEntity<List<AssignAccountResponse>> getAllAccounts(){
         List<AssignAccountResponse> accounts = awsService.fetchAllAccounts();
         return ResponseEntity.ok(accounts);
     }
+
+    /**
+     fetch accounts by role
+     */
 
     @PreAuthorize("hasAnyRole('ADMIN', 'READ-ONLY','CUSTOMER')")
     @GetMapping("/account-by-role")

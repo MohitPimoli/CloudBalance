@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Typography, Box } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import DynamicReusableTable from "../utils/DynamicReusableTable";
@@ -6,7 +6,7 @@ import config from "../../config/AwsServiceColumnNameConfig";
 import getStatusColor from "../utils/statusColorUtils";
 import { fetchASGInstances } from "../../services/awsServiceApis";
 
-const ASG = ({ accountNumber }) => {
+const ASG = ({ accountNumber, setSnackbar }) => {
   const { data, isLoading, isFetching, isError, error } = useQuery({
     queryKey: ["asg-instances", accountNumber],
     queryFn: () => fetchASGInstances(accountNumber),
@@ -14,7 +14,21 @@ const ASG = ({ accountNumber }) => {
     staleTime: 5 * 60 * 1000,
   });
 
-
+  if (data?.status === 204) {
+    setSnackbar({
+      open: true,
+      message: "No ASG instances found.",
+      severity: "info",
+    });
+    setTimeout(() => {
+      setSnackbar({
+        open: false,
+        message: "",
+        severity: "info",
+      });
+    }, 4000);
+    return null;
+  }
   const columns = config.ASG.columns;
 
   const renderCell = (row, key) => {
@@ -47,6 +61,16 @@ const ASG = ({ accountNumber }) => {
     return row[key];
   };
 
+  useEffect(() => {
+    if (isError) {
+      setSnackbar({
+        open: true,
+        message: error?.response?.data?.message || "Please try again later.",
+        severity: "error",
+      });
+    }
+  }, [isError, error]);
+
   return (
     <DynamicReusableTable
       columns={columns}
@@ -58,6 +82,15 @@ const ASG = ({ accountNumber }) => {
       enableFilters
       getRowId={(row) => row.id}
       headerColor="#1e3a8a"
+      filterableColumns={[
+        "id",
+        "name",
+        "region",
+        "desiredCapacity",
+        "minSize",
+        "maxSize",
+        "status",
+      ]}
     />
   );
 };

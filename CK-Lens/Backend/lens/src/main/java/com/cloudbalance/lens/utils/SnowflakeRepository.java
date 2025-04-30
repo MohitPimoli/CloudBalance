@@ -27,6 +27,15 @@ public class SnowflakeRepository {
         this.sqlQueries = sqlQueries;
     }
 
+    /**
+     * Fetch data from Snowflake with applied conditions
+     * @param linkedId
+     * @param groupBy
+     * @param startDate
+     * @param endDate
+     * @param filterDTO
+     * @return List of CostExplorerResponseDTO Object
+     */
 
     public List<CostExplorerResponseDTO.CostExplorerData> getData(String linkedId, String groupBy, String startDate,
                                                                   String endDate, ColumnFilterDTO filterDTO) {
@@ -53,6 +62,12 @@ public class SnowflakeRepository {
             return new CostExplorerResponseDTO.CostExplorerData(columnName, cost, date);
         });
     }
+
+    /**
+     * Fetch distinct value present in given column
+     * @param columnName
+     * @return List of distinct value
+     */
 
     public List<String> getFilter(String columnName) {
         return jdbcTemplate.queryForList(sqlQueries.getFilterValue(columnName), String.class);

@@ -1,5 +1,6 @@
 package com.cloudbalance.lens.controller;
 
+import com.cloudbalance.lens.dto.GlobalMessageDTO;
 import com.cloudbalance.lens.dto.auth.AuthRequestDTO;
 import com.cloudbalance.lens.dto.auth.AuthResponseDTO;
 import com.cloudbalance.lens.service.auth.AuthService;
@@ -12,8 +13,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.Map;
 
 @RestController
@@ -26,10 +29,13 @@ public class AuthController {
         this.authService = authService;
     }
 
+    /**
+     * User login
+     */
+
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody AuthRequestDTO loginDTO, HttpServletResponse response) {
         AuthResponseDTO authResponse = authService.login(loginDTO);
-
         ResponseCookie refreshTokenCookie = ResponseCookie.from(Constant.REFRESH_TOKEN, authResponse.getRefreshToken())
                 .httpOnly(true)
                 .secure(true)
@@ -37,23 +43,33 @@ public class AuthController {
                 .sameSite("Strict")
                 .maxAge(3 * 24 * 60 * 60L) // 3 days
                 .build();
-
         response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString());
         authResponse.setRefreshToken(null);
-
         return ResponseEntity.ok(authResponse);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'READ-ONLY','CUSTOMER')")
+    /**
+     * User logout
+     */
+
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(HttpServletRequest request) {
+    public ResponseEntity<GlobalMessageDTO> logout(HttpServletRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return ResponseEntity.ok(authService.logout(request));
     }
+
+    /**
+     * Fetch public key
+     */
 
     @GetMapping("/public-key")
     public ResponseEntity<String> publicKey() {
         return ResponseEntity.ok(authService.publicKey());
     }
+
+    /**
+     * Refresh token
+     */
 
     @PostMapping("/refresh")
     public ResponseEntity<Map<String, String>> refreshToken(HttpServletRequest request, HttpServletResponse response) {
@@ -68,7 +84,6 @@ public class AuthController {
                     .sameSite("Strict")
                     .maxAge(3 * 24 * 60 * 60L) // 3 days
                     .build();
-
             response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString());
             return ResponseEntity.ok(Map.of(Constant.ACCESS_TOKEN,accessToken));
 

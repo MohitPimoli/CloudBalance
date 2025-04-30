@@ -1,5 +1,6 @@
 package com.cloudbalance.lens.controller;
 
+import com.cloudbalance.lens.dto.GlobalMessageDTO;
 import com.cloudbalance.lens.dto.onboarding.OnboardingRequest;
 import com.cloudbalance.lens.service.onboarding.OnboardingService;
 import jakarta.validation.Valid;
@@ -20,9 +21,12 @@ public class OnboardingController {
         this.onboardingService = onboardingService;
     }
 
-    @PostMapping("/aws-account")                     // add AWs account to DB
+    /**
+     add AWs account to DB*/
+
+    @PostMapping("/aws-account")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> registerAwsAccount(@Valid @RequestBody  OnboardingRequest onboardingRequest) {
+    public ResponseEntity<GlobalMessageDTO> registerAwsAccount(@Valid @RequestBody  OnboardingRequest onboardingRequest) {
         return ResponseEntity.ok(onboardingService.registerAwsAccount(onboardingRequest));
     }
 

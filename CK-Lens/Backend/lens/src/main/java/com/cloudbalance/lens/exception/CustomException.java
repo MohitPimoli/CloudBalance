@@ -29,4 +29,5 @@ public class CustomException extends ApiException {
             super(message);
         }
     }
+
 }

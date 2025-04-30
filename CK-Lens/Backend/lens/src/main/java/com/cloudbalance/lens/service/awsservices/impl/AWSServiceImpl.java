@@ -48,7 +48,7 @@ public class AWSServiceImpl implements AWSService {
     @Override
     public List<EC2InstanceDTO> fetchEC2Instances(Long accountNumber) {
         log.info("Fetching EC2 instances for account number: {}", accountNumber);
-        Account account = accountRepository.getAccountByAccountNumber(accountNumber).orElseThrow(() ->
+        Account account = accountRepository.findByAccountNumber(accountNumber).orElseThrow(() ->
                 new ResourceNotFoundException(Constant.ACCOUNT_NOT_FOUND + accountNumber));
 
         String roleArn = account.getArn();
@@ -84,7 +84,7 @@ public class AWSServiceImpl implements AWSService {
     @Override
     public List<RDSInstanceDTO> fetchRDSInstances(Long accountNumber) {
         log.info("Fetching RDS instances for account number: {}", accountNumber);
-        Account account = accountRepository.getAccountByAccountNumber(accountNumber).orElseThrow(() ->
+        Account account = accountRepository.findByAccountNumber(accountNumber).orElseThrow(() ->
                 new ResourceNotFoundException(Constant.ACCOUNT_NOT_FOUND + accountNumber));
 
         String roleArn = account.getArn();
@@ -116,7 +116,7 @@ public class AWSServiceImpl implements AWSService {
     @Override
     public List<ASGDTO> fetchAutoScalingGroups(Long accountNumber) {
         log.info("Fetching ASG instances for account number: {}", accountNumber);
-        Account account = accountRepository.getAccountByAccountNumber(accountNumber).orElseThrow(() ->
+        Account account = accountRepository.findByAccountNumber(accountNumber).orElseThrow(() ->
                 new ResourceNotFoundException(Constant.ACCOUNT_NOT_FOUND + accountNumber));
 
         String roleArn = account.getArn();

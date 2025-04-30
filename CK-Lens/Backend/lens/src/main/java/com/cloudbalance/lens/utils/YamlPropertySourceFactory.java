@@ -12,6 +12,16 @@ import java.util.Objects;
 import java.util.Properties;
 
 public class YamlPropertySourceFactory implements PropertySourceFactory {
+
+    /**
+     * @param name the name of the property source
+     * (can be {@code null} in which case the factory implementation
+     * will have to generate a name based on the given resource)
+     * @param resource the resource (potentially encoded) to wrap
+     * @return
+     * @throws IOException
+     */
+
     @Override
     public PropertySource<?> createPropertySource(String name, EncodedResource resource) throws IOException {
         YamlPropertiesFactoryBean factory = new YamlPropertiesFactoryBean();

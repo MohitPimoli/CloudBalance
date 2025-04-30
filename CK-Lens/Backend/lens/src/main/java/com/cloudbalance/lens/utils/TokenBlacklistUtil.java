@@ -16,7 +16,6 @@ public class TokenBlacklistUtil {
         this.blackListedTokenRepository = blackListedTokenRepository;
     }
 
-
     private  final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     public void blacklistToken(String token) {

@@ -22,6 +22,7 @@ public class UserDTO {
     @NotBlank(message = "id is required", groups = OnUpdate.class)
     private Long id;
 
+    @NotBlank(message = "Username is required", groups = OnCreate.class)
     private String username;
 
     @NotBlank(message = "First name is required", groups = OnCreate.class)

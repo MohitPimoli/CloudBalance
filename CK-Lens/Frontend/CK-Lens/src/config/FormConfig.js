@@ -24,38 +24,46 @@ const FormConfig = (isEditMode) => [
         name: 'firstName',
         label: 'First Name',
         type: 'text',
-        rules: { required: 'First Name is required', pattern: alphaNumPattern },
+        rules: isEditMode
+            ? {}
+            : { required: 'First Name is required', pattern: alphaNumPattern },
     },
     {
         name: 'lastName',
         label: 'Last Name',
         type: 'text',
-        rules: { required: 'Last Name is required', pattern: alphaNumPattern },
+        rules: isEditMode
+            ? {}
+            : { required: 'Last Name is required', pattern: alphaNumPattern },
     },
     {
         name: 'email',
         label: 'Email',
         type: 'email',
-        rules: {
-            required: 'Email is required',
-            pattern: {
-                value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                message: 'Invalid email format',
+        rules: isEditMode
+            ? {}
+            : {
+                required: 'Email is required',
+                pattern: {
+                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                    message: 'Invalid email format',
+                },
             },
-        },
     },
     {
         name: 'username',
         label: 'Username',
         type: 'text',
-        rules: {
-            required: 'Username is required',
-            pattern: usernamePattern,
-            minLength: {
-                value: 6,
-                message: 'Username must be at least 6 characters',
+        rules: isEditMode
+            ? {}
+            : {
+                required: 'Username is required',
+                pattern: usernamePattern,
+                minLength: {
+                    value: 6,
+                    message: 'Username must be at least 6 characters',
+                },
             },
-        },
     },
     {
         name: 'password',

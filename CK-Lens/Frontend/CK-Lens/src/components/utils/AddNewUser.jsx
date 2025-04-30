@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { CircularProgress, Alert } from "@mui/material";
+import { useParams, useNavigate } from "react-router-dom";
 import {
+  CircularProgress,
+  Alert,
   Box,
   TextField,
   Breadcrumbs,
@@ -12,7 +13,6 @@ import {
   Typography,
   Paper,
 } from "@mui/material";
-import { useParams } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import AccountIdAssociation from "../utils/AccountSelectBox";
 import FormConfig from "../../config/FormConfig";
@@ -22,6 +22,7 @@ import {
   updateUser,
 } from "../../services/userManagementServiceApis";
 import { encryptPass } from "../../services/authServiceApis";
+import SnackBar from "./SnackBar";
 
 const AddNewUser = () => {
   const { userId } = useParams();
@@ -29,6 +30,11 @@ const AddNewUser = () => {
   const typo = isEditMode ? "Update User" : "Add New User";
   const navigate = useNavigate();
   const addUserFormConfig = FormConfig(isEditMode);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "error",
+  });
 
   const {
     control,
@@ -39,6 +45,7 @@ const AddNewUser = () => {
     defaultValues: {
       firstName: "",
       lastName: "",
+      username: "",
       email: "",
       password: "",
       role: "",
@@ -78,8 +85,10 @@ const AddNewUser = () => {
     }
   }, [isEditMode, fetchUserData]);
 
-  const handleLinkedAccountsChange = useCallback((accounts) => {
-    if (selectedRole === "CUSTOMER") {
+  const handleLinkedAccountsChange = useCallback((accounts, role) => {
+    console.log("Linked Accounts:", accounts);
+    console.log("Role", role);
+    if (role === "CUSTOMER") {
       setLinkedAccounts(accounts.map((acc) => acc.accountId));
     }
   }, []);
@@ -97,6 +106,7 @@ const AddNewUser = () => {
           id: isEditMode ? userId : null,
           firstName: data.firstName,
           lastName: data.lastName,
+          username: data.username,
           email: data.email,
           password: encryptedPassword,
           roleName: data.role,
@@ -105,10 +115,19 @@ const AddNewUser = () => {
       };
 
       if (isEditMode) {
-        await updateUser(payload);
-        setSuccessMsg("User updated successfully!");
+        const response = await updateUser(payload);
+        setSnackbar({
+          open: true,
+          message: response?.message || "User updated successfully!",
+          severity: "success",
+        });
       } else {
-        await registerUser(payload);
+        const response = await registerUser(payload);
+        setSnackbar({
+          open: true,
+          message: response?.message || "User registered successfully!",
+          severity: "success",
+        });
         setSuccessMsg("User registered successfully!");
       }
       reset();
@@ -132,6 +151,10 @@ const AddNewUser = () => {
         aria-label="breadcrumb"
         sx={{ mb: 2 }}
       >
+        <SnackBar
+          snackbar={snackbar}
+          setSnackbar={setSnackbar}
+        />
         <Link
           underline="hover"
           color="inherit"

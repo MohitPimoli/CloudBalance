@@ -29,17 +29,26 @@ public class UserManagementController {
     }
 
 
+    /**
+     add a user*/
+
     @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/register")                                                            //add a user
+    @PostMapping("/register")
     public ResponseEntity<String> register(@Validated(OnCreate.class) @RequestBody UserManagementDTO userManagementDTO) {
         return ResponseEntity.ok(userManagementService.registerUser(userManagementDTO));
     }
 
+    /**
+     link Aws accounts to user*/
+
     @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/update")                                                                   // link Aws accounts to user
+    @PutMapping("/update")
     public ResponseEntity<String> updateUser(@Validated(OnUpdate.class)  @RequestBody UserManagementDTO userManagementDTO) {
         return ResponseEntity.ok(userManagementService.updateUser(userManagementDTO));
     }
+
+    /**
+     fetch all users*/
 
     @PreAuthorize("hasAnyRole('ADMIN', 'READ-ONLY')")
     @GetMapping("/all")
@@ -49,20 +58,29 @@ public class UserManagementController {
         return ResponseEntity.ok(userManagementService.fetchAllUsers(page, size));
     }
 
+    /**
+     fetch all Accounts*/
+
     @PreAuthorize("hasAnyRole('ADMIN', 'READ-ONLY')")
-    @GetMapping("/account/all")                                                                          // fetch all Accounts
+    @GetMapping("/account/all")
     public ResponseEntity<List<AssignAccountResponse>> fetchAllAccounts() {
         return ResponseEntity.ok(awsService.fetchAllAccounts());
     }
 
+    /**
+     fetch all Accounts by id*/
+
     @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/all-accounts")                                                                      // fetch all Accounts by id
+    @GetMapping("/all-accounts")
     public ResponseEntity<List<AssignAccountResponse>> fetchAllAccountsById(@RequestParam("userId") Long userId) {
         return ResponseEntity.ok(userManagementService.fetchAllAccounts(userId));
     }
 
+    /**
+     fetch users by id*/
+
     @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/get")                                                                                 // fetch users by id
+    @GetMapping("/get")
     public ResponseEntity<UserDTO> fetchUserDetail(@RequestParam("userId") Long userId){
         return ResponseEntity.ok(userManagementService.fetchUserDetail(userId));
     }

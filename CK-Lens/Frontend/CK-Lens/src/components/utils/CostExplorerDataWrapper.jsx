@@ -8,7 +8,6 @@ import {
   ToggleButton,
   Paper,
   Typography,
-  CircularProgress,
   Card,
   useTheme,
 } from "@mui/material";
@@ -25,6 +24,8 @@ import CostDataTable from "./CostDataTable";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { RiFileExcel2Fill } from "react-icons/ri";
+import LoadingScreen from "../../page/LoadingScreen";
+import SnackBar from "./SnackBar";
 
 const CostExplorerDataWrapper = ({
   selectedAccount,
@@ -37,6 +38,11 @@ const CostExplorerDataWrapper = ({
   const [startDate, setStartDate] = useState(dayjs().startOf("month"));
   const [endDate, setEndDate] = useState(dayjs().endOf("month"));
   const [appliedFilters, setAppliedFilters] = useState({});
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
   const groupTotals = {};
 
@@ -61,48 +67,8 @@ const CostExplorerDataWrapper = ({
     enabled: !!selectedAccount && !!selectedOption,
   });
 
-  const handleApplyFilters = (filtersObj) => {
-    setAppliedFilters(filtersObj);
-    refetch();
-  };
-
-  const exportToExcel = (data, fileName = "cost-data.xlsx") => {
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Cost Data");
-    const excelBuffer = XLSX.write(workbook, {
-      bookType: "xlsx",
-      type: "array",
-    });
-    const blob = new Blob([excelBuffer], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
-    saveAs(blob, fileName);
-  };
-
   if (isLoading) {
-    return (
-      <Paper
-        elevation={2}
-        sx={{
-          p: 4,
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          flexDirection: "column",
-          borderRadius: 2,
-          minHeight: "400px",
-        }}
-      >
-        <CircularProgress size={40} />
-        <Typography
-          variant="body1"
-          sx={{ mt: 2, color: "text.secondary" }}
-        >
-          Loading cost data...
-        </Typography>
-      </Paper>
-    );
+    return <LoadingScreen message="Loading cost data..." />;
   }
 
   if (isError) {
@@ -140,10 +106,13 @@ const CostExplorerDataWrapper = ({
     );
   }
 
-  // Check if data exists and has items in the data array
+  const handleApplyFilters = (filtersObj) => {
+    setAppliedFilters(filtersObj);
+    refetch();
+  };
+
   const hasResponseData = data && data.data && data.data.length > 0;
 
-  // Early return if no data
   if (!hasResponseData) {
     return renderNoDataView();
   }
@@ -155,13 +124,11 @@ const CostExplorerDataWrapper = ({
     },
   ];
 
-  // Calculate group totals with safety check for small numbers
   data.data.forEach((item) => {
     const name = item.groupBy || "Total";
     if (!groupTotals[name]) {
       groupTotals[name] = 0;
     }
-    // Use Number() to ensure proper numeric handling of scientific notation
     groupTotals[name] += Math.abs(Number(item.cost));
   });
 
@@ -181,7 +148,7 @@ const CostExplorerDataWrapper = ({
           )
           .reduce((sum, item) => sum + Math.abs(Number(item.cost)), 0);
 
-        return { value: sumOthers.toFixed(8) }; // Increase precision to handle small values
+        return { value: sumOthers.toFixed(8) };
       } else {
         const match = data.data.find(
           (item) =>
@@ -197,7 +164,6 @@ const CostExplorerDataWrapper = ({
     };
   });
 
-  // Check if there's any actual cost data to display (even very small values)
   const hasData = dataset.some((series) =>
     series.data.some((item) => parseFloat(item.value) > 0)
   );
@@ -268,11 +234,10 @@ const CostExplorerDataWrapper = ({
         toolTipPadding: "6",
         alignCaptionWithCanvas: "0",
         captionPadding: "15",
-        // Format numbers to display very small values properly
         numberScaleValue: "1,10,100,1000,10000,100000",
         numberScaleUnit: ",,M,B",
         formatNumberScale: "1",
-        decimals: "4", // Show more decimal places for small values
+        decimals: "4",
         forceDecimals: "1",
         dataEmptyMessage: "No cost data available for the selected criteria.",
         dataEmptyMessageColor: "#666666",
@@ -281,6 +246,25 @@ const CostExplorerDataWrapper = ({
       categories,
       dataset,
     },
+  };
+
+  const exportToExcel = (data, fileName = "cost-data.xlsx") => {
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Cost Data");
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+    const blob = new Blob([excelBuffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    saveAs(blob, fileName);
+    setSnackbar({
+      open: true,
+      message: "Data download started...",
+      severity: "success",
+    });
   };
 
   return (
@@ -465,6 +449,10 @@ const CostExplorerDataWrapper = ({
           appliedGroupBy={selectedOption}
         />
       </Box>
+      <SnackBar
+        setSnackbar={setSnackbar}
+        snackbar={snackbar}
+      />
     </Paper>
   );
 };

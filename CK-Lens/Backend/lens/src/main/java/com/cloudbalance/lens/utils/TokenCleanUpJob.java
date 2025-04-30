@@ -17,7 +17,12 @@ public class TokenCleanUpJob {
         this.blackListedTokenRepository = blackListedTokenRepository;
     }
 
-    @Scheduled(cron = "0 15 10 * * ?") // every day at 10:15 AM
+    /**
+     * Blacklisted Token cleaner
+     * Scheduled Job: 10:15 AM Everyday
+     */
+
+    @Scheduled(cron = "0 15 10 * * ?")
     @Transactional
     public void purgeExpiredTokens() {
         LocalDateTime now = LocalDateTime.now();
