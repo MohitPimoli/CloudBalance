@@ -2,6 +2,7 @@ package com.cloudbalance.lens.service.usermanagement.impl;
 
 import com.cloudbalance.lens.dto.account.AssignAccountResponse;
 import com.cloudbalance.lens.dto.pagination.PagedResponse;
+import com.cloudbalance.lens.dto.usermanagement.StatusDTO;
 import com.cloudbalance.lens.dto.usermanagement.UserDTO;
 import com.cloudbalance.lens.dto.usermanagement.UserManagementDTO;
 import com.cloudbalance.lens.entity.Account;
@@ -222,6 +223,7 @@ public class UserManagementImpl implements UserManagementService {
     public UserDTO fetchUserDetail(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new CustomException.UserNotFoundException(Constant.USER_NOT_FOUND_WITH_ID + id));
+        log.info("User details fetched successfully");
         return UserDTO.builder()
                 .id(user.getId())
                 .username(user.getUsername())
@@ -233,6 +235,17 @@ public class UserManagementImpl implements UserManagementService {
                 .lastLogin(user.getLastAccessedTime() != null
                         ? user.getLastAccessedTime().format(FORMATTER)
                         : null)
+                .build();
+    }
+
+    @Override
+    public StatusDTO fetchStatus() {
+        long activeCount = userRepository.countByActiveTrue();
+        long inactiveCount = userRepository.countByActiveFalse();
+        log.info("ActiveInactive status count fetched successfully");
+        return StatusDTO.builder()
+                .active(activeCount)
+                .all(inactiveCount+activeCount)
                 .build();
     }
 }

@@ -5,12 +5,14 @@ import {
   ListItemButton,
   ListItemText,
   ListItemIcon,
+  Tooltip,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import config from "../../config/SidebarTabsConfig";
 
-const drawerWidth = 240;
+const expandedWidth = 240;
+const collapsedWidth = 60;
 
 const Sidebar = ({ open }) => {
   const navigate = useNavigate();
@@ -37,58 +39,79 @@ const Sidebar = ({ open }) => {
     <Drawer
       variant="persistent"
       anchor="left"
-      open={open}
+      open={true}
       sx={{
-        width: drawerWidth,
+        width: open ? expandedWidth : collapsedWidth,
         flexShrink: 0,
+        whiteSpace: "nowrap",
+        transition: "width 0.3s",
         "& .MuiDrawer-paper": {
-          width: drawerWidth,
+          width: open ? expandedWidth : collapsedWidth,
           marginTop: "64px",
+          overflowX: "hidden",
+          transition: "width 0.3s",
+          boxShadow: "2px 0 5px rgba(0, 0, 0, 0.3)",
         },
       }}
     >
       <List>
         {accessibleTabs.map((item) => {
           const IconComponent = item.icon;
+          const isActive = window.location.pathname === item.path;
+
           return (
-            <ListItemButton
-              sx={{
-                borderRadius: "8px",
-                py: 1.2,
-                px: 2,
-                bgcolor:
-                  window.location.pathname === item.path
-                    ? "#e3f2fd"
-                    : "transparent",
-                "&:hover": {
-                  backgroundColor: "#f1f1f1",
-                },
-              }}
+            <Tooltip
+              title={!open ? item.text : ""}
+              placement="right"
               key={item.text}
-              onClick={() => handleNavigation(item.path)}
             >
-              {IconComponent && (
-                <ListItemIcon
-                  sx={{
-                    color:
-                      window.location.pathname === item.path
-                        ? "#1976d2"
-                        : "#666",
-                  }}
-                >
-                  <IconComponent />
-                </ListItemIcon>
-              )}
-              <ListItemText
-                primary={item.text}
-                primaryTypographyProps={{
-                  fontSize: "15px",
-                  fontWeight: 500,
-                  color:
-                    window.location.pathname === item.path ? "#1976d2" : "#333",
+              <ListItemButton
+                sx={{
+                  borderRadius: "8px",
+                  py: 1.2,
+                  px: open ? 2 : 1.5,
+                  bgcolor: isActive ? "#e3f2fd" : "transparent",
+                  "&:hover": {
+                    backgroundColor: "#f1f1f1",
+                    "& .MuiListItemIcon-root": {
+                      color: "#1976d2",
+                    },
+                    "& .MuiListItemText-primary": {
+                      color: "#1976d2",
+                    },
+                  },
+                  justifyContent: open ? "flex-start" : "center",
                 }}
-              />
-            </ListItemButton>
+                onClick={() => handleNavigation(item.path)}
+              >
+                {IconComponent && (
+                  <ListItemIcon
+                    sx={{
+                      minWidth: 0,
+                      mr: open ? 2 : 0,
+                      color: isActive ? "#1976d2" : "#666",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <IconComponent
+                      sx={{
+                        fontSize: 30,
+                      }}
+                    />
+                  </ListItemIcon>
+                )}
+                {open && (
+                  <ListItemText
+                    primary={item.text}
+                    primaryTypographyProps={{
+                      fontSize: "15px",
+                      fontWeight: 500,
+                      color: isActive ? "#1976d2" : "#333",
+                    }}
+                  />
+                )}
+              </ListItemButton>
+            </Tooltip>
           );
         })}
       </List>

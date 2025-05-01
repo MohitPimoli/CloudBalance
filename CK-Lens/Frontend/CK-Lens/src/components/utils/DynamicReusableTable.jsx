@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -25,6 +25,8 @@ const DynamicReusableTable = ({
   error,
   onScroll,
   enableFilters = false,
+  clearFilters,
+  onFiltersCleared,
   filterableColumns = [],
   getRowId = (row) => row.id,
   renderCell,
@@ -46,6 +48,13 @@ const DynamicReusableTable = ({
       [key]: !prev[key],
     }));
   };
+
+  useEffect(() => {
+    if (clearFilters) {
+      setFilters({});
+      onFiltersCleared?.();
+    }
+  }, [clearFilters]);
 
   const filteredData = useMemo(() => {
     return data.filter((item) =>
@@ -212,7 +221,7 @@ const DynamicReusableTable = ({
               >
                 {columns.map(({ key }) => (
                   <TableCell key={key}>
-                    {renderCell ? renderCell(row, key) : row[key]}
+                    {renderCell ? renderCell(row, key) : row[key] || "-"}
                   </TableCell>
                 ))}
               </TableRow>
@@ -239,7 +248,7 @@ const DynamicReusableTable = ({
                       ? typeof footerData[key] === "number"
                         ? `$${footerData[key].toFixed(2)}`
                         : footerData[key]
-                      : ""}
+                      : "-"}
                   </Typography>
                 </TableCell>
               ))}

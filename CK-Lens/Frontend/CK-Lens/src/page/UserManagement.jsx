@@ -5,11 +5,14 @@ import EditIcon from "@mui/icons-material/Edit";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import AddIcon from "@mui/icons-material/Add";
 import { useSelector } from "react-redux";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import UserFilterToggle from "../components/utils/UserFilterToggle";
 import DynamicReusableTable from "../components/utils/DynamicReusableTable";
 import config from "../config/userManagementTableColumns";
-import { fetchUsers } from "../services/userManagementServiceApis";
+import {
+  fetchUsers,
+  fetchUsersStatus,
+} from "../services/userManagementServiceApis";
 import LoadingScreen from "../page/LoadingScreen";
 
 const UserManagementDashboard = () => {
@@ -18,6 +21,7 @@ const UserManagementDashboard = () => {
   const open = useSelector((state) => state.sidebar.open);
   const { dashboardPermissions } = useSelector((state) => state.auth);
   const columns = config.columns;
+  const [clearFilters, setClearFilters] = useState(false);
 
   const hasEditPermission = (permissions, dashboardName) => {
     if (!permissions) return false;
@@ -45,6 +49,15 @@ const UserManagementDashboard = () => {
     },
   });
 
+  const {
+    data: statusData = {},
+    isLoading: statusLoading,
+    error: statusError,
+  } = useQuery({
+    queryKey: ["user-status"],
+    queryFn: fetchUsersStatus,
+  });
+
   const allUsers = data?.pages.flatMap((page) => page.users) || [];
 
   const filteredUsers =
@@ -66,6 +79,10 @@ const UserManagementDashboard = () => {
     if (isNearBottom && hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
     }
+  };
+
+  const handleResetFilters = () => {
+    setClearFilters(true);
   };
 
   const renderCell = (row, key) => {
@@ -96,18 +113,20 @@ const UserManagementDashboard = () => {
         mt: 8,
         overflow: "hidden",
         ml: 2,
+        pr: 8,
       }}
     >
       <Container
-        maxWidth="xl"
+        maxWidth="fullWidth"
         disableGutters
         sx={{
           mb: 5,
-          ml: open ? "15px" : "80px",
+          ml: open ? "15px" : "5px",
           transition: "margin-left 0.3s ease",
           height: "100%",
           display: "flex",
           flexDirection: "column",
+          mr: 1,
         }}
       >
         {/* Title and Actions */}
@@ -146,7 +165,10 @@ const UserManagementDashboard = () => {
           <Button
             variant="outlined"
             startIcon={<FilterListIcon />}
-            onClick={() => setFilter("active")}
+            onClick={() => {
+              setFilter("active");
+              setClearFilters(true);
+            }}
           >
             Reset Filters
           </Button>
@@ -155,8 +177,8 @@ const UserManagementDashboard = () => {
             <UserFilterToggle
               filter={filter}
               onChange={handleFilterChange}
-              activeCount={allUsers.filter((u) => u.active).length}
-              allCount={allUsers.length}
+              activeCount={statusData.active}
+              allCount={statusData.all}
             />
           </Box>
         </Box>
@@ -173,6 +195,8 @@ const UserManagementDashboard = () => {
           <DynamicReusableTable
             columns={columns}
             data={filteredUsers}
+            clearFilters={clearFilters}
+            onFiltersCleared={() => setClearFilters(false)}
             isLoading={isLoading && allUsers.length === 0}
             isError={isError}
             error={error}

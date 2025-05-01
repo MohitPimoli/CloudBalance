@@ -18,7 +18,7 @@ import { toggleSidebar } from "../../redux/actions/sidebarAction";
 import { persistor } from "../../redux/store";
 import { UsersRound, LogOut } from "lucide-react";
 import { logoutUser } from "../../services/authServiceApis";
-import theme from "../theme/Theme";
+
 const Header = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -55,7 +55,7 @@ const Header = () => {
         color="white"
         sx={{
           backgroundColor: "#ffffff",
-          boxShadow: "none",
+          boxShadow: "2px 3px 5px rgba(0, 0, 0, 0.3)",
           padding: "0 10px",
           borderBottom: "1px solid #e0e0e0",
           zIndex: (theme) => theme.zIndex.drawer + 1,
@@ -142,10 +142,7 @@ const Header = () => {
           </Box>
         </Toolbar>
       </AppBar>
-      <Sidebar
-        open={open}
-        handleDrawerToggle={handleToggle}
-      />
+      <Sidebar open={open} />
     </Box>
   );
 };
