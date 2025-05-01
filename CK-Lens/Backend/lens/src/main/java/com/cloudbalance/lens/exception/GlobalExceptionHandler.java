@@ -9,6 +9,7 @@ import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.BadSqlGrammarException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -110,7 +111,7 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
     }
 
-    @ExceptionHandler(NoHandlerFoundException.class)
+    @ExceptionHandler({NoHandlerFoundException.class,HttpRequestMethodNotSupportedException.class})
     public ResponseEntity<ErrorResponse> handleNoHandlerFound(NoHandlerFoundException ex,HttpServletRequest request) {
         log.warn("handleNoHandlerFound exception: {}", ex.getMessage());
         return buildResponse(HttpStatus.NOT_FOUND,ex.getMessage(),request);

@@ -54,7 +54,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         try {
             if (blackListedTokenRepository.existsByToken(token)) {
                 log.warn("Blacklisted token used: {}", token);
-                jwtUtil.writeCustomErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, 4002,
+                jwtUtil.writeCustomErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, 1001,
                         "BlacklistedToken", "Token is blacklisted.");
                 return;
             }

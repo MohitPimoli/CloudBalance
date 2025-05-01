@@ -2,6 +2,7 @@ package com.cloudbalance.lens.controller;
 
 import com.cloudbalance.lens.dto.account.AssignAccountResponse;
 import com.cloudbalance.lens.dto.pagination.PagedResponse;
+import com.cloudbalance.lens.dto.usermanagement.StatusDTO;
 import com.cloudbalance.lens.dto.usermanagement.UserDTO;
 import com.cloudbalance.lens.dto.usermanagement.UserManagementDTO;
 import com.cloudbalance.lens.service.awsservices.impl.AWSServiceImpl;
@@ -77,11 +78,20 @@ public class UserManagementController {
     }
 
     /**
-     fetch users by id*/
+     *  fetch users by id*/
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/get")
     public ResponseEntity<UserDTO> fetchUserDetail(@RequestParam("userId") Long userId){
         return ResponseEntity.ok(userManagementService.fetchUserDetail(userId));
+    }
+
+    /**
+     fetch count of all and current active users*/
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'READ-ONLY')")
+    @GetMapping("/status")
+    public ResponseEntity<StatusDTO> fetchTotalUserStatus(){
+        return ResponseEntity.ok(userManagementService.fetchStatus());
     }
 }

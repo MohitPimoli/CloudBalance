@@ -86,8 +86,6 @@ const AddNewUser = () => {
   }, [isEditMode, fetchUserData]);
 
   const handleLinkedAccountsChange = useCallback((accounts, role) => {
-    console.log("Linked Accounts:", accounts);
-    console.log("Role", role);
     if (role === "CUSTOMER") {
       setLinkedAccounts(accounts.map((acc) => acc.accountId));
     }
@@ -258,32 +256,30 @@ const AddNewUser = () => {
                 />
               </Grid>
             ))}
-            <Grid
-              textAlign="right"
-              size={{ xs: 12 }}
-            >
-              <Button
-                variant="contained"
-                color="primary"
-                type="submit"
-                sx={{ mt: 1 }}
-                disabled={loading}
-                startIcon={loading && <CircularProgress size={18} />}
-              >
-                {loading ? "Submitting..." : "Submit"}
-              </Button>
-            </Grid>
           </Grid>
-          <Box sx={{ mb: 5 }} />
+          <Box/>
           {selectedRole === "CUSTOMER" && (
-            <Grid size={{ xs: 12 }}>
-              <AccountIdAssociation
-                userid={isEditMode ? userId : null}
-                role={selectedRole}
-                onLinkedAccountsChange={handleLinkedAccountsChange}
-              />
-            </Grid>
+            <AccountIdAssociation
+              userid={isEditMode ? userId : null}
+              role={selectedRole}
+              onLinkedAccountsChange={handleLinkedAccountsChange}
+            />
           )}
+          <Grid
+            textAlign="right"
+            size={{ xs: 12}}
+          >
+            <Button
+              variant="contained"
+              color="primary"
+              type="submit"
+              sx={{ mt: 3 }}
+              disabled={loading}
+              startIcon={loading && <CircularProgress size={18} />}
+            >
+              {loading ? "Submitting..." : "Submit"}
+            </Button>
+          </Grid>
         </form>
       </Paper>
     </Box>

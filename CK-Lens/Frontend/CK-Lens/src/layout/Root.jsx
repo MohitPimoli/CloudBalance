@@ -7,6 +7,7 @@ import Header from "../components/header/Header";
 import { logout } from "../redux/actions/authActions";
 import { persistor } from "../redux/store";
 import Cookies from "js-cookie";
+import MissingPageRedirect from "../page/MissingPageRedirect";
 
 function Root() {
   const location = useLocation();
@@ -15,6 +16,7 @@ function Root() {
   const accessToken = Cookies.get("token");
   const token = accessToken || reduxToken;
   const navigate = useNavigate();
+  const open = useSelector((state) => state.sidebar.open);
 
   useEffect(() => {
     if (!token) {
@@ -25,6 +27,14 @@ function Root() {
   }, [token, dispatch]);
 
   const isAuthenticated = !!token;
+
+  if (!reduxToken) {
+    setTimeout(() => {
+      navigate("/login");
+    }, 3000);
+    console.log("Token", reduxToken);
+    return <MissingPageRedirect />;
+  }
 
   return isAuthenticated ? (
     <Box
@@ -37,7 +47,7 @@ function Root() {
         disableGutters
         maxWidth={false}
         sx={{
-          pl: 30,
+          pl: open ? 30 : 15,
           mt: 4,
         }}
       >

@@ -28,3 +28,7 @@ export const updateUser = async (payload) => {
     const response = await api.put("/user/update", payload);
     return response.data;
 };
+export const fetchUsersStatus = async () => {
+    const response = await api.get("/user/status");
+    return response.data;
+};
