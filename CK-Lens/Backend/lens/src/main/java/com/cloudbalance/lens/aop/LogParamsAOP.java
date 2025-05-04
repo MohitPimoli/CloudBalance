@@ -19,9 +19,7 @@ public class LogParamsAOP {
             "|| execution(* com.cloudbalance.lens.service.awsservices..*(..)) " +
             "|| execution(* com.cloudbalance.lens.service.onboarding..*(..))")
     public void logMethodParams(JoinPoint joinPoint) {
-        String methodName = joinPoint.getSignature().toShortString();
         Object[] args = joinPoint.getArgs();
-        log.info("Executing: {}", methodName);
-        log.info("Parameters: {}", Arrays.toString(args));
+        log.info("Parameters for {} are {}",joinPoint.getSignature().toShortString(), Arrays.toString(args));
     }
 }

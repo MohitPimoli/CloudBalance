@@ -28,14 +28,6 @@ function Root() {
 
   const isAuthenticated = !!token;
 
-  if (!reduxToken) {
-    setTimeout(() => {
-      navigate("/login");
-    }, 3000);
-    console.log("Token", reduxToken);
-    return <MissingPageRedirect />;
-  }
-
   return isAuthenticated ? (
     <Box
       display="flex"

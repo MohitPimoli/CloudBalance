@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Typography } from "@mui/material";
-import ThankYouSVG from "../assets/green_tick_check.svg";
 import { motion } from "framer-motion";
+import config from "../config/ThankyouPageConfig";
 
 const ThankYouPage = () => {
   return (
@@ -22,7 +22,7 @@ const ThankYouPage = () => {
       >
         <Box
           component="img"
-          src={ThankYouSVG}
+          src={config.svg}
           alt="Success checkmark"
           sx={{ width: 100, height: 100, mb: 2 }}
         />
@@ -33,7 +33,7 @@ const ThankYouPage = () => {
         variant="h6"
         fontWeight="bold"
       >
-        Thank You For Onboarding with{" "}
+        {config.t1}
         <Box
           component="span"
           sx={{ color: "#4398D7" }}
@@ -66,8 +66,7 @@ const ThankYouPage = () => {
         align="center"
         sx={{ mt: 2, maxWidth: 600, mx: "auto", color: "text.secondary" }}
       >
-        We appreciate you completing the setup process with our tool{" "}
-        <strong>CloudBalance Lens</strong>. You're all set to start using it.
+        {config.p}
       </Typography>
     </Box>
   );

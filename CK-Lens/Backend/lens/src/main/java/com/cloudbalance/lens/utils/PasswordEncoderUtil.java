@@ -6,8 +6,9 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class PasswordEncoderUtil {
-    private void PasswordDecryptorUtil(){}
-
+    private PasswordEncoderUtil() {
+        // Private constructor to prevent instantiation
+    }
     private static final PasswordEncoder ENCODER = new BCryptPasswordEncoder();
 
     public static String encode(String rawPassword) {

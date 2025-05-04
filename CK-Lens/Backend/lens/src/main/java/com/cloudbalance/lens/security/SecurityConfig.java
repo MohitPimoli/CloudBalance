@@ -1,6 +1,7 @@
 package com.cloudbalance.lens.security;
 
 import com.cloudbalance.lens.config.JwtAuthFilter;
+import com.cloudbalance.lens.config.RoleBasedRateLimiterFilter;
 import com.cloudbalance.lens.service.auth.impl.CustomUserDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,12 +29,17 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
+
     private final CustomUserDetailsServiceImpl userDetailsService;
     private final JwtAuthFilter jwtAuthFilter;
+    private final RoleBasedRateLimiterFilter roleBasedRateLimiterFilter;
 
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter, CustomUserDetailsServiceImpl userDetailsService) {
+    public SecurityConfig(JwtAuthFilter jwtAuthFilter,
+                          CustomUserDetailsServiceImpl userDetailsService,
+                          RoleBasedRateLimiterFilter roleBasedRateLimiterFilter) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.userDetailsService = userDetailsService;
+        this.roleBasedRateLimiterFilter = roleBasedRateLimiterFilter;
     }
 
     /**
@@ -55,6 +61,7 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(roleBasedRateLimiterFilter, JwtAuthFilter.class)
                 .build();
     }
 

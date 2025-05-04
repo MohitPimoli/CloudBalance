@@ -1,6 +1,5 @@
 package com.cloudbalance.lens.utils;
 
-import jakarta.annotation.Nullable;
 import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
 import org.springframework.core.env.PropertiesPropertySource;
 import org.springframework.core.env.PropertySource;
@@ -27,9 +26,11 @@ public class YamlPropertySourceFactory implements PropertySourceFactory {
         YamlPropertiesFactoryBean factory = new YamlPropertiesFactoryBean();
         factory.setResources(resource.getResource());
 
-        @Nullable
+
         Properties properties = factory.getObject();
-        return new PropertiesPropertySource(Objects.requireNonNull(resource.getResource().getFilename()), properties);
+        return new PropertiesPropertySource(
+                Objects.requireNonNull(resource.getResource().getFilename()),
+                properties);
     }
 }
 

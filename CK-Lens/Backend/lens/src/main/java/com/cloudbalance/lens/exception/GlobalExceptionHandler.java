@@ -129,6 +129,12 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR,ex.getMessage(),request);
     }
 
+    @ExceptionHandler(CustomException.TokenExpiredException.class)
+    public ResponseEntity<ErrorResponse> handleTokenExpired(CustomException.TokenExpiredException ex, HttpServletRequest request) {
+        log.warn("Token expired: {}", ex.getMessage());
+        return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
+    }
+
     @ExceptionHandler(StsException.class)
     public ResponseEntity<Object> handleStsException(StsException ex) {
         String message = ex.getMessage();

@@ -10,6 +10,7 @@ import com.cloudbalance.lens.entity.DashboardPermission;
 import com.cloudbalance.lens.entity.User;
 import com.cloudbalance.lens.exception.CustomException;
 import com.cloudbalance.lens.exception.CustomException.InvalidCredentialsException;
+import com.cloudbalance.lens.exception.CustomException.TokenExpiredException;
 import com.cloudbalance.lens.exception.CustomException.TokenMissingException;
 import com.cloudbalance.lens.exception.GenericApplicationException;
 import com.cloudbalance.lens.exception.KeyLoadingException;
@@ -37,7 +38,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -100,7 +100,7 @@ public class AuthServiceImpl implements AuthService {
                         .dashboard(p.getDashboard())
                         .permissionType(p.getPermissionType())
                         .build())
-                .collect(Collectors.toList());
+                .toList();
         log.info("User '{}' logged in successfully", user.getUsername());
 
         return AuthResponseDTO.builder()
@@ -153,11 +153,11 @@ public class AuthServiceImpl implements AuthService {
         } catch (TokenMissingException e) {
             log.error("Token missing during logout", e);
             return GlobalMessageDTO.builder()
-                    .message("Error during logout").build();
+                    .message(Constant.ERROR_DURING_LOGOUT).build();
         } catch (Exception e) {
-            log.error("Error during logout", e);
+            log.error(Constant.ERROR_DURING_LOGOUT, e);
             return GlobalMessageDTO.builder()
-                    .message("Error during logout").build();
+                    .message(Constant.ERROR_DURING_LOGOUT).build();
         }
     }
 
@@ -198,7 +198,8 @@ public class AuthServiceImpl implements AuthService {
         }
 
         if (oldRefreshToken == null) {
-            throw new GenericApplicationException("Missing refresh token");
+            log.info("Missing refresh token in cookies");
+            throw new TokenExpiredException("Missing refresh token");
         }
 
         try {
@@ -207,6 +208,7 @@ public class AuthServiceImpl implements AuthService {
 
             if (jwtUtil.isTokenExpired(oldRefreshToken)) {
                 tokenBlacklistUtil.blacklistToken(oldRefreshToken);
+                log.info("Refresh token expired: {}", oldRefreshToken);
                 throw new ExpiredJwtException(null, null, "Refresh token expired");
             }
 
@@ -220,10 +222,15 @@ public class AuthServiceImpl implements AuthService {
                     Constant.REFRESH_TOKEN, newRefreshToken
             );
 
-        } catch (ExpiredJwtException e) {
+        }
+        catch (TokenExpiredException e) {
+            throw e;
+        }
+        catch (ExpiredJwtException e) {
             tokenBlacklistUtil.blacklistToken(oldRefreshToken);
             throw e;
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             throw new GenericApplicationException("Invalid refresh token");
         }
     }

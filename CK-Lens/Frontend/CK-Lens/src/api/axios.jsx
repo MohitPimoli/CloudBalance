@@ -1,6 +1,7 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 import { navigate } from "../services/navigationService";
+import { persistor } from "../redux/store";
 
 let isRefreshing = false;
 let failedQueue = [];
@@ -101,6 +102,7 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
+        persistor.purge();
         navigate("/login");
         return Promise.reject(refreshError);
       } finally {

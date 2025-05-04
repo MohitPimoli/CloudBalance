@@ -29,5 +29,13 @@ public class CustomException extends ApiException {
             super(message);
         }
     }
+    public static class TokenExpiredException extends ApiException {
+        public TokenExpiredException() {
+            super("Token has expired.");
+        }
+        public TokenExpiredException(String message) {
+            super(message);
+        }
+    }
 
 }
