@@ -7,14 +7,14 @@ import com.cloudbalance.lens.repository.ColumnNameRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
 @PropertySource(value = "classpath:queries.yml", factory = YamlPropertySourceFactory.class)
-@Service
+@Component
 public class SqlQueries {
 
     @Value("${queries.getFilterValue}")

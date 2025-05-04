@@ -16,4 +16,5 @@ public class Constant {
     public static final String USER_NOT_FOUND_WITH_USERNAME = "User not found with username:";
     public static final String COLUMN_NAME_NOT_FOUND=  "Column Name not found for FieldName:";
     public static final String FIELD_NAME_NOT_FOUND = "Field Name not found for columnName";
+    public static final String ERROR_DURING_LOGOUT = "Error during logout";
 }

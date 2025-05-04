@@ -18,11 +18,9 @@ public class LogExecutionTimeAOP {
             "|| execution(* com.cloudbalance.lens.repository..*(..))")
     public Object logExecutionTime(ProceedingJoinPoint joinPoint) throws Throwable {
         long startTime = System.currentTimeMillis();
-        log.info("Execution started for: {}", joinPoint.getSignature());
         Object result = joinPoint.proceed();
         long endTime = System.currentTimeMillis();
-        log.info("Execution ended for: {}", joinPoint.getSignature());
-        log.info("Total execution time: {} ms", (endTime - startTime));
+        log.info("Total execution time taken by {} is {} ms",joinPoint.getSignature().toShortString(), (endTime - startTime));
         return result;
     }
 }

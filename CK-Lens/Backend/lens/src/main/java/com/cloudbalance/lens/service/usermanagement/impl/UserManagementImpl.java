@@ -86,7 +86,8 @@ public class UserManagementImpl implements UserManagementService {
             List<UserCloudAccount> userCloudAccounts = new ArrayList<>();
             for (Long accountId : accountIds) {
                 Account account = accountRepository.findById(accountId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Account not found with ID: " + accountId));
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException("Account not found with ID: " + accountId));
 
                 UserCloudAccount userCloudAccount = new UserCloudAccount();
                 userCloudAccount.setUser(user);
@@ -101,7 +102,8 @@ public class UserManagementImpl implements UserManagementService {
 
     private Role getRole(UserDTO userDTO) {
         return roleRepository.findRoleIdByRoleName(userDTO.getRoleName())
-                .orElseThrow(() -> new ResourceNotFoundException("Role not found with name: " + userDTO.getRoleName()));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Role not found with name: " + userDTO.getRoleName()));
     }
 
 
@@ -109,7 +111,8 @@ public class UserManagementImpl implements UserManagementService {
     public String updateUser(UserManagementDTO userManagementDTO) {
         UserDTO userDTO = userManagementDTO.getUserDTO();
         User user = userRepository.findById(userDTO.getId())
-                .orElseThrow(() -> new CustomException.UserNotFoundException("User not found with ID: " + userDTO.getId()));
+                .orElseThrow(() ->
+                        new CustomException.UserNotFoundException("User not found with ID: " + userDTO.getId()));
 
         updateBasicFields(user, userDTO);
         updatePasswordIfNeeded(user, userDTO);
@@ -154,7 +157,8 @@ public class UserManagementImpl implements UserManagementService {
             List<UserCloudAccount> newLinks = new ArrayList<>();
             for (Long accountId : accountIds) {
                 Account account = accountRepository.findById(accountId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Account not found with ID: " + accountId));
+                        .orElseThrow(()
+                                -> new ResourceNotFoundException("Account not found with ID: " + accountId));
                 UserCloudAccount userCloudAccount = new UserCloudAccount();
                 userCloudAccount.setUser(user);
                 userCloudAccount.setCloudAccount(account);
@@ -201,7 +205,8 @@ public class UserManagementImpl implements UserManagementService {
         List<Account> allAccounts = accountRepository.findAll();
         List<AssignAccountResponse> assignAccountDTOS;
             User user = userRepository.findById(id)
-                    .orElseThrow(() -> new CustomException.UserNotFoundException(Constant.USER_NOT_FOUND_WITH_ID + id));
+                    .orElseThrow(() ->
+                            new CustomException.UserNotFoundException(Constant.USER_NOT_FOUND_WITH_ID + id));
             List<Long> linkedAccountIds = user.getAssignedAccounts().stream()
                     .map(uca -> uca.getCloudAccount().getId())
                     .toList();
@@ -222,7 +227,8 @@ public class UserManagementImpl implements UserManagementService {
     @Override
     public UserDTO fetchUserDetail(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new CustomException.UserNotFoundException(Constant.USER_NOT_FOUND_WITH_ID + id));
+                .orElseThrow(() ->
+                        new CustomException.UserNotFoundException(Constant.USER_NOT_FOUND_WITH_ID + id));
         log.info("User details fetched successfully");
         return UserDTO.builder()
                 .id(user.getId())

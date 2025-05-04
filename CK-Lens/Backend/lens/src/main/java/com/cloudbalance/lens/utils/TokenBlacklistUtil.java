@@ -16,14 +16,14 @@ public class TokenBlacklistUtil {
         this.blackListedTokenRepository = blackListedTokenRepository;
     }
 
-    private  final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    private  final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     public void blacklistToken(String token) {
         if (!blackListedTokenRepository.existsByToken(token)) {
             BlackListedToken blackListedToken = BlackListedToken.builder()
                     .token(token)
-                    .blacklistedAt(LocalDateTime.parse(LocalDateTime.now().format(FORMATTER), FORMATTER))
-                    .tokenExpiry(LocalDateTime.parse(LocalDateTime.now().format(FORMATTER), FORMATTER))
+                    .blacklistedAt(LocalDateTime.parse(LocalDateTime.now().format(formatter), formatter))
+                    .tokenExpiry(LocalDateTime.parse(LocalDateTime.now().format(formatter), formatter))
                     .build();
             blackListedTokenRepository.save(blackListedToken);
         }

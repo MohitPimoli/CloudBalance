@@ -29,7 +29,6 @@ import software.amazon.awssdk.services.rds.RdsClient;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -71,7 +70,7 @@ public class AWSServiceImpl implements AWSService {
                             .region(instance.placement().availabilityZone())
                             .status(instance.state().nameAsString())
                             .build())
-                    .collect(Collectors.toList());
+                    .toList();
 
             log.info("Fetched {} EC2 instances", instances.size());
             return instances;
@@ -103,7 +102,7 @@ public class AWSServiceImpl implements AWSService {
                             .status(db.dbInstanceStatus())
                             .engine(db.engine())
                             .build())
-                    .collect(Collectors.toList());
+                    .toList();
 
             log.info("Fetched {} RDS instances", rdsInstances.size());
             return rdsInstances;
@@ -130,13 +129,13 @@ public class AWSServiceImpl implements AWSService {
                     .map(asg -> ASGDTO.builder()
                             .id(asg.autoScalingGroupName())
                             .name(asg.autoScalingGroupName())
-                            .region(asg.availabilityZones().isEmpty() ? "N/A" : asg.availabilityZones().get(0))
+                            .region(asg.availabilityZones().isEmpty() ? "N/A" : asg.availabilityZones().getFirst())
                             .desiredCapacity(asg.desiredCapacity())
                             .minSize(asg.minSize())
                             .maxSize(asg.maxSize())
                             .status(asg.status() == null ? "N/A" : asg.status())
                             .build())
-                    .collect(Collectors.toList());
+                    .toList();
 
             log.info("Fetched {} Auto Scaling Groups", asgs.size());
             return asgs;
@@ -193,7 +192,7 @@ public class AWSServiceImpl implements AWSService {
                                 .build();
                     })
                     .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
+                    .toList();
 
             log.info("Found {} linked accounts for userId: {}", accountDtos.size(), userId);
             return accountDtos;
