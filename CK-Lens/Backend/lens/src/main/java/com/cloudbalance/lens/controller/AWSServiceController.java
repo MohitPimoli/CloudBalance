@@ -71,8 +71,7 @@ public class AWSServiceController {
     @PreAuthorize("hasAnyRole('ADMIN', 'READ-ONLY','CUSTOMER')")
     @GetMapping("/linked-accounts")
     public ResponseEntity<List<AssignAccountResponse>> getLinkedAccounts(@RequestParam("userId") Long userId){
-        List<AssignAccountResponse> accounts = awsService.fetchLinkedAccounts(userId);
-        return ResponseEntity.ok(accounts);
+        return ResponseEntity.ok(awsService.fetchLinkedAccounts(userId));
     }
 
     /**
@@ -82,8 +81,7 @@ public class AWSServiceController {
     @PreAuthorize("hasAnyRole('ADMIN', 'READ-ONLY')")
     @GetMapping("/all-accounts")
     public ResponseEntity<List<AssignAccountResponse>> getAllAccounts(){
-        List<AssignAccountResponse> accounts = awsService.fetchAllAccounts();
-        return ResponseEntity.ok(accounts);
+        return ResponseEntity.ok(awsService.fetchAllAccounts());
     }
 
     /**
@@ -92,9 +90,8 @@ public class AWSServiceController {
 
     @PreAuthorize("hasAnyRole('ADMIN', 'READ-ONLY','CUSTOMER')")
     @GetMapping("/account-by-role")
-    public ResponseEntity<List<AssignAccountResponse>> getAccountsByRole(){
-        List<AssignAccountResponse> accounts = awsService.fetchAccountsByRole();
-        return ResponseEntity.ok(accounts);
+    public ResponseEntity<List<AssignAccountResponse>> getAccounts(@RequestParam("userId") Long userId){
+        return ResponseEntity.ok(awsService.fetchAccounts(userId));
     }
 
 }

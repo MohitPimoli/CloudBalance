@@ -12,5 +12,4 @@ class LensApplicationTests {
 		 * This test is used to check if the Spring application context loads successfully.
 		 */
 	}
-
 }

@@ -15,9 +15,9 @@ export const fetchASGInstances = async (accountNumber) => {
     return res;
 };
 
-export const fetchAccounts = async () => {
+export const fetchAccounts = async (userId) => {
     try {
-        const response = await api.get("/aws/account-by-role");
+        const response = await api.get("/aws/account-by-role", { params: { userId } });
         return response?.data;
     } catch (err) {
         console.error("Error fetching accounts", err);

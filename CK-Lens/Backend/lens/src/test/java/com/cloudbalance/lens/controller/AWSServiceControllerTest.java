@@ -168,7 +168,7 @@ class AWSServiceControllerTest {
                         .build()
         );
 
-        when(awsService.fetchAccountsByRole()).thenReturn(list);
+        when(awsService.fetchAccounts(1L)).thenReturn(list);
 
         mockMvc.perform(get("/aws/account-by-role"))
                 .andExpect(status().isOk())

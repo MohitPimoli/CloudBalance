@@ -5,13 +5,17 @@ import { fetchAccounts } from "../../services/awsServiceApis";
 import { useSelector } from "react-redux";
 
 const AwsAccountSelect = ({ selectedAccount, setSelectedAccount, label }) => {
-  const user = useSelector((state) => state.auth.user);
-  const id = user?.id;
+  const { user, switchUser } = useSelector((state) => state.auth);
+  const isSwitchedByAdmin = useSelector((state) => state?.switch?.isSwitched);
+  const { userId } = isSwitchedByAdmin
+    ? { userId: switchUser?.id }
+    : { userId: user?.id };
 
+  console.log("userId", userId);
   const { data: accounts = [], isLoading } = useQuery({
-    queryKey: ["accounts", id],
-    queryFn: fetchAccounts,
-    enabled: !!id,
+    queryKey: ["accounts", userId],
+    queryFn: () => fetchAccounts(userId),
+    enabled: !!userId,
     staleTime: 5 * 60 * 1000,
   });
 

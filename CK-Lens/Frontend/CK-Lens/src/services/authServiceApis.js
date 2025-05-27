@@ -10,7 +10,6 @@ export const logoutUser = async () => {
         },
         withCredentials: true,
     });
-
     return response;
 };
 
@@ -26,6 +25,7 @@ export const encryptPass = async (rawPassword) => {
         encrypt.setPublicKey(publicKey.data);
         const encryptedPass = encrypt.encrypt(rawPassword);
         if (!encryptedPass) throw new Error("Encryption failed");
+        console.log("Pass: ", encryptedPass)
         return encryptedPass;
     } catch (error) {
         console.error("Encryption error:", error);

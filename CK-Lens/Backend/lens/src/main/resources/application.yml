@@ -8,3 +8,7 @@ logging:
 
 server:
   port: 5555
+  error:
+    include-stacktrace: never
+
+

@@ -9,15 +9,26 @@ export const loginSuccess = (userData) => {
             token: userData.token,
             id: userData.id,
             username: userData.username,
-            email: userData.email,
             role: userData.role,
             dashboardPermissions: userData.dashboardPermissions,
         },
     };
 };
 
+export const switchUserSuccess = (switchUserData,token) => ({
+    type: 'SWITCH_USER_SUCCESS',
+    payload: {
+        id: switchUserData.id,
+        username: switchUserData.username,
+        role: switchUserData.role,
+        dashboardPermissions: switchUserData.dashboardPermissions,
+        token: token,
+    },
+});
+
 export const logout = () => {
     return {
         type: 'LOGOUT',
     };
 };
+

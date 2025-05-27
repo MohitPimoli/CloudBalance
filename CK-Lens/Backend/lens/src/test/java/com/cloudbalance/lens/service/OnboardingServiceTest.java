@@ -24,11 +24,12 @@ import static org.mockito.Mockito.*;
 class OnboardingServiceTest {
 
     @Mock private AccountRepository accountRepository;
-    @Mock private OnboardingServiceImpl onboardingService;
+    private OnboardingServiceImpl onboardingService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        onboardingService= new OnboardingServiceImpl(accountRepository);
     }
 
     @Test

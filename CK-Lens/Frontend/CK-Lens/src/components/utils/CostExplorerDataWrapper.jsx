@@ -35,7 +35,7 @@ const CostExplorerDataWrapper = ({
 }) => {
   const theme = useTheme();
   const [chartType, setChartType] = useState("bar");
-  const [startDate, setStartDate] = useState(dayjs().startOf("month"));
+  const [startDate, setStartDate] = useState(dayjs(dayjs("2015-01-01")));
   const [endDate, setEndDate] = useState(dayjs().endOf("month"));
   const [appliedFilters, setAppliedFilters] = useState({});
   const [snackbar, setSnackbar] = useState({
@@ -154,7 +154,7 @@ const CostExplorerDataWrapper = ({
           (item) =>
             item.date === date && (item.groupBy || "Total") === groupType
         );
-        return { value: match ? Math.abs(Number(match.cost)).toFixed(8) : "0" }; // Increase precision
+        return { value: match ? Math.abs(Number(match.cost)).toFixed(8) : "0" };
       }
     });
 

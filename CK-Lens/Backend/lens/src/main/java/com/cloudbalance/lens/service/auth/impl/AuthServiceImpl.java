@@ -6,7 +6,6 @@ import com.cloudbalance.lens.dto.auth.AuthRequestDTO;
 import com.cloudbalance.lens.dto.auth.AuthResponseDTO;
 import com.cloudbalance.lens.dto.auth.CustomUserDetails;
 import com.cloudbalance.lens.dto.auth.UserDashboardPermission;
-import com.cloudbalance.lens.entity.DashboardPermission;
 import com.cloudbalance.lens.entity.User;
 import com.cloudbalance.lens.exception.CustomException;
 import com.cloudbalance.lens.exception.CustomException.InvalidCredentialsException;
@@ -14,10 +13,10 @@ import com.cloudbalance.lens.exception.CustomException.TokenExpiredException;
 import com.cloudbalance.lens.exception.CustomException.TokenMissingException;
 import com.cloudbalance.lens.exception.GenericApplicationException;
 import com.cloudbalance.lens.exception.KeyLoadingException;
-import com.cloudbalance.lens.repository.DashboardPermissionRepository;
 import com.cloudbalance.lens.repository.UserRepository;
 import com.cloudbalance.lens.service.auth.AuthService;
 import com.cloudbalance.lens.utils.Constant;
+import com.cloudbalance.lens.utils.DashboardPermissions;
 import com.cloudbalance.lens.utils.PasswordDecryptorUtil;
 import com.cloudbalance.lens.utils.TokenBlacklistUtil;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -48,24 +47,24 @@ public class AuthServiceImpl implements AuthService {
     private final CustomUserDetailsServiceImpl customUserDetailsService;
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
-    private final DashboardPermissionRepository dashboardPermissionRepository;
     private final TokenBlacklistUtil tokenBlacklistUtil;
     private final PasswordDecryptorUtil passwordDecryptorUtil;
+    private final DashboardPermissions dashboardPermissions;
 
     public AuthServiceImpl(UserRepository userRepository,
                            AuthenticationManager authenticationManager,
                            CustomUserDetailsServiceImpl customUserDetailsService,
                            JwtUtil jwtUtil,
-                           DashboardPermissionRepository dashboardPermissionRepository,
                            TokenBlacklistUtil tokenBlacklistUtil,
-                           PasswordDecryptorUtil passwordDecryptorUtil) {
+                           PasswordDecryptorUtil passwordDecryptorUtil,
+                           DashboardPermissions dashboardPermissions) {
         this.userRepository = userRepository;
         this.authenticationManager = authenticationManager;
         this.customUserDetailsService = customUserDetailsService;
         this.jwtUtil = jwtUtil;
-        this.dashboardPermissionRepository = dashboardPermissionRepository;
         this.tokenBlacklistUtil = tokenBlacklistUtil;
         this.passwordDecryptorUtil = passwordDecryptorUtil;
+        this.dashboardPermissions = dashboardPermissions;
     }
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -86,7 +85,8 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByUsername(loginDTO.getUsername())
                 .orElseThrow(() -> {
                     log.warn("User not found: {}", loginDTO.getUsername());
-                    return new CustomException.UserNotFoundException("User not found for username: "+loginDTO.getUsername());
+                    return new CustomException.UserNotFoundException("User not found for username: "+loginDTO
+                            .getUsername());
                 });
         user.setLastAccessedTime(LocalDateTime.parse(LocalDateTime.now().format(FORMATTER), FORMATTER));
         userRepository.save(user);
@@ -94,13 +94,8 @@ public class AuthServiceImpl implements AuthService {
                 .loadUserByUsername(user.getUsername());
         String token = jwtUtil.generateToken(customUserDetails);
         String refreshToken = jwtUtil.generateRefreshToken(customUserDetails);
-        List<DashboardPermission> permissions = dashboardPermissionRepository.findByRoleName(user.getRole().getName());
-        List<UserDashboardPermission> userDashboardPermissions = permissions.stream()
-                .map(p -> UserDashboardPermission.builder()
-                        .dashboard(p.getDashboard())
-                        .permissionType(p.getPermissionType())
-                        .build())
-                .toList();
+        List<UserDashboardPermission> userDashboardPermissions = dashboardPermissions
+                .getDashboardPermissions(user.getRole());
         log.info("User '{}' logged in successfully", user.getUsername());
 
         return AuthResponseDTO.builder()

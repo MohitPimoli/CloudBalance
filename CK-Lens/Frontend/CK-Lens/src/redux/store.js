@@ -5,17 +5,19 @@ import { thunk } from 'redux-thunk';
 import authReducer from './reducers/authReducer';
 import sidebarReducer from './reducers/sidebarReducers';
 import filterReducer from "./reducers/filterReducer";
+import switchUserReducer from './reducers/switchUserReducer';
 
 const persistConfig = {
   key: 'root',
   storage,
-  whitelist: ['auth'],
+  whitelist: ['auth', 'switch'],
 };
 
 const rootReducer = combineReducers({
   auth: authReducer,
   sidebar: sidebarReducer,
   filters: filterReducer,
+  switch: switchUserReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

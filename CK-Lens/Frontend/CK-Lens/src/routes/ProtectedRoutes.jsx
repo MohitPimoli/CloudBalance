@@ -8,10 +8,27 @@ const ProtectedRoute = ({
   requiredPermission,
 }) => {
   const location = useLocation();
-  const { token, dashboardPermissions } = useSelector((state) => state.auth);
-  const isAuthenticated = !!token;
+  const {
+    token,
+    dashboardPermissions,
+    switchUserToken,
+    switchUserPermissions,
+  } = useSelector((state) => state?.auth);
 
-  const hasPermission = dashboardPermissions.some(
+  const isSwitchedByAdmin = useSelector((state) => state?.switch?.isSwitched);
+
+  const { userToken, userDashboardPermissions } = isSwitchedByAdmin
+    ? {
+        userToken: switchUserToken,
+        userDashboardPermissions: switchUserPermissions,
+      }
+    : {
+        userToken: token,
+        userDashboardPermissions: dashboardPermissions,
+      };
+
+  const isAuthenticated = !!userToken;
+  const hasPermission = userDashboardPermissions.some(
     (perm) =>
       perm.dashboard === requiredDashboard &&
       (requiredPermission === "READ"

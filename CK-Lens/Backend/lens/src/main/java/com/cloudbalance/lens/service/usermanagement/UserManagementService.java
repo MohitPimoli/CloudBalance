@@ -1,6 +1,7 @@
 package com.cloudbalance.lens.service.usermanagement;
 
 import com.cloudbalance.lens.dto.account.AssignAccountResponse;
+import com.cloudbalance.lens.dto.auth.AuthResponseDTO;
 import com.cloudbalance.lens.dto.pagination.PagedResponse;
 import com.cloudbalance.lens.dto.usermanagement.StatusDTO;
 import com.cloudbalance.lens.dto.usermanagement.UserDTO;
@@ -15,4 +16,7 @@ public interface UserManagementService {
     List<AssignAccountResponse> fetchAllAccounts(Long id);
     UserDTO fetchUserDetail(Long id);
     StatusDTO fetchStatus();
+    AuthResponseDTO switchUser(Long userId);
+
+    List<UserDTO> getAllCustomers();
 }

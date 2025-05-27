@@ -1,6 +1,8 @@
 package com.cloudbalance.lens.service.usermanagement.impl;
 
 import com.cloudbalance.lens.dto.account.AssignAccountResponse;
+import com.cloudbalance.lens.dto.auth.AuthResponseDTO;
+import com.cloudbalance.lens.dto.auth.UserDashboardPermission;
 import com.cloudbalance.lens.dto.pagination.PagedResponse;
 import com.cloudbalance.lens.dto.usermanagement.StatusDTO;
 import com.cloudbalance.lens.dto.usermanagement.UserDTO;
@@ -9,6 +11,7 @@ import com.cloudbalance.lens.entity.Account;
 import com.cloudbalance.lens.entity.Role;
 import com.cloudbalance.lens.entity.User;
 import com.cloudbalance.lens.entity.UserCloudAccount;
+import com.cloudbalance.lens.exception.BadRequestException;
 import com.cloudbalance.lens.exception.CustomException;
 import com.cloudbalance.lens.exception.ResourceAlreadyExistsException;
 import com.cloudbalance.lens.exception.ResourceNotFoundException;
@@ -18,6 +21,7 @@ import com.cloudbalance.lens.repository.UserCloudAccountRepository;
 import com.cloudbalance.lens.repository.UserRepository;
 import com.cloudbalance.lens.service.usermanagement.UserManagementService;
 import com.cloudbalance.lens.utils.Constant;
+import com.cloudbalance.lens.utils.DashboardPermissions;
 import com.cloudbalance.lens.utils.PasswordDecryptorUtil;
 import com.cloudbalance.lens.utils.PasswordEncoderUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -41,17 +45,20 @@ public class UserManagementImpl implements UserManagementService {
     private final RoleRepository roleRepository;
     private final UserCloudAccountRepository userCloudAccountRepository;
     private final PasswordDecryptorUtil passwordDecryptorUtil;
+    private final DashboardPermissions dashboardPermissions;
 
     public UserManagementImpl(UserRepository userRepository,
                               AccountRepository accountRepository,
                               RoleRepository roleRepository,
                               UserCloudAccountRepository userCloudAccountRepository,
-                              PasswordDecryptorUtil passwordDecryptorUtil) {
+                              PasswordDecryptorUtil passwordDecryptorUtil,
+                              DashboardPermissions dashboardPermissions) {
         this.userRepository = userRepository;
         this.accountRepository = accountRepository;
         this.roleRepository = roleRepository;
         this.userCloudAccountRepository = userCloudAccountRepository;
         this.passwordDecryptorUtil = passwordDecryptorUtil;
+        this.dashboardPermissions = dashboardPermissions;
     }
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -202,6 +209,7 @@ public class UserManagementImpl implements UserManagementService {
 
     @Override
     public List<AssignAccountResponse> fetchAllAccounts(Long id) {
+
         List<Account> allAccounts = accountRepository.findAll();
         List<AssignAccountResponse> assignAccountDTOS;
             User user = userRepository.findById(id)
@@ -248,10 +256,50 @@ public class UserManagementImpl implements UserManagementService {
     public StatusDTO fetchStatus() {
         long activeCount = userRepository.countByActiveTrue();
         long inactiveCount = userRepository.countByActiveFalse();
-        log.info("ActiveInactive status count fetched successfully");
+        log.info("Active/Inactive status count fetched successfully");
         return StatusDTO.builder()
                 .active(activeCount)
                 .all(inactiveCount+activeCount)
                 .build();
+    }
+
+    @Override
+    public AuthResponseDTO switchUser(Long userId) {
+        log.info("Switching user to ID {}", userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new CustomException.UserNotFoundException(Constant.USER_NOT_FOUND_WITH_ID + userId));
+        List<UserDashboardPermission> userDashboardPermissions;
+        if(user.getRole().getName().equals("CUSTOMER")){
+            userDashboardPermissions = dashboardPermissions.getDashboardPermissions(user.getRole());
+        }
+        else{
+            throw new BadRequestException("Only switching to role CUSTOMER is permitted");
+        }
+        log.info("Permissions fetched for user with id: {}", userId);
+        return AuthResponseDTO.builder()
+                .id(user.getId())
+                .role(user.getRole().getName())
+                .username(user.getUsername())
+                .dashboardPermissions(userDashboardPermissions)
+                .build();
+    }
+
+    @Override
+    public List<UserDTO> getAllCustomers() {
+        log.info("Fetching all customers for switching user");
+        List<User> customers = userRepository.findAllByRoleName();
+        if (customers.isEmpty()) {
+            log.info("No customers found");
+            return new ArrayList<>();
+        }
+        log.info("{} customers found", customers.size());
+        return customers.stream()
+                .map(user -> UserDTO.builder()
+                        .id(user.getId())
+                        .firstName(user.getFirstname())
+                        .lastName(user.getLastname())
+                        .build())
+                .toList();
     }
 }

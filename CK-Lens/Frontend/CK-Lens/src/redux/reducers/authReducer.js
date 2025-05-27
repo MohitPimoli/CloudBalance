@@ -3,6 +3,9 @@ const initialState = {
   user: null,
   dashboardPermissions: [],
   token: null,
+  switchUser: null,
+  switchUserToken: null,
+  switchUserPermissions: [],
 };
 
 const authReducer = (state = initialState, action) => {
@@ -19,6 +22,18 @@ const authReducer = (state = initialState, action) => {
           role: action.payload.role,
         },
         dashboardPermissions: action.payload.dashboardPermissions,
+      };
+    case 'SWITCH_USER_SUCCESS':
+      return {
+        ...state,
+        switchUser: {
+          id: action.payload.id,
+          username: action.payload.username,
+          role: action.payload.role,
+
+        },
+        switchUserToken: action.payload.token,
+        switchUserPermissions: action.payload.dashboardPermissions,
       };
     case 'LOGOUT':
       Cookies.remove("token");
