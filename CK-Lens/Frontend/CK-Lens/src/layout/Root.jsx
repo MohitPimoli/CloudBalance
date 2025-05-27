@@ -7,7 +7,6 @@ import Header from "../components/header/Header";
 import { logout } from "../redux/actions/authActions";
 import { persistor } from "../redux/store";
 import Cookies from "js-cookie";
-import MissingPageRedirect from "../page/MissingPageRedirect";
 
 function Root() {
   const location = useLocation();

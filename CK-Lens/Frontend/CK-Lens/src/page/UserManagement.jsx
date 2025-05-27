@@ -18,11 +18,11 @@ import LoadingScreen from "../page/LoadingScreen";
 const UserManagementDashboard = () => {
   const navigate = useNavigate();
   const [filter, setFilter] = useState("active");
+  const isSwitchedByAdmin = useSelector((state) => state?.switch?.isSwitched);
   const open = useSelector((state) => state.sidebar.open);
-  const { dashboardPermissions } = useSelector((state) => state.auth);
+  const { dashboardPermissions, user } = useSelector((state) => state.auth);
   const columns = config.columns;
   const [clearFilters, setClearFilters] = useState(false);
-
   const hasEditPermission = (permissions, dashboardName) => {
     if (!permissions) return false;
     const dashboard = permissions.find(
@@ -30,9 +30,11 @@ const UserManagementDashboard = () => {
     );
     return dashboard && dashboard.permissionType === "EDIT";
   };
-
   const canEdit = hasEditPermission(dashboardPermissions, "USER_MANAGEMENT");
-
+  const iAmAdmin = user?.role === "ADMIN";
+  if (isSwitchedByAdmin) {
+    navigate("/");
+  }
   const {
     data,
     fetchNextPage,
@@ -48,21 +50,13 @@ const UserManagementDashboard = () => {
       return lastPage.hasNextPage ? allPages.length : undefined;
     },
   });
-
-  const {
-    data: statusData = {},
-    isLoading: statusLoading,
-    error: statusError,
-  } = useQuery({
+  const { data: statusData = {} } = useQuery({
     queryKey: ["user-status"],
     queryFn: fetchUsersStatus,
   });
-
   const allUsers = data?.pages.flatMap((page) => page.users) || [];
-
   const filteredUsers =
     filter === "active" ? allUsers.filter((user) => user.active) : allUsers;
-
   const handleFilterChange = (_event, newFilter) => {
     if (newFilter !== null) {
       setFilter(newFilter);
@@ -71,18 +65,12 @@ const UserManagementDashboard = () => {
 
   const handleScroll = (event) => {
     if (!event.target) return;
-
     const { scrollHeight, scrollTop, clientHeight } = event.target;
     const threshold = 100;
     const isNearBottom = scrollHeight - scrollTop - clientHeight < threshold;
-
     if (isNearBottom && hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
     }
-  };
-
-  const handleResetFilters = () => {
-    setClearFilters(true);
   };
 
   const renderCell = (row, key) => {
@@ -90,17 +78,22 @@ const UserManagementDashboard = () => {
       return row.active ? "YES" : "NO";
     }
     if (key === "actions") {
+      const isEditingSelf = iAmAdmin && row.id === user.id;
+
       return (
         <IconButton
           color="primary"
           size="small"
           onClick={() => navigate(`/user-management/modify/${row.id}`)}
-          disabled={!canEdit}
+          disabled={
+            (!canEdit && !iAmAdmin && row.roleName !== "ADMIN") || isEditingSelf
+          }
         >
           <EditIcon />
         </IconButton>
       );
     }
+
     return row[key];
   };
 

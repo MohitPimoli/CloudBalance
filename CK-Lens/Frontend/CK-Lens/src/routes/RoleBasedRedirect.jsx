@@ -3,7 +3,9 @@ import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 
 const RoleBasedRedirect = () => {
-  const role = useSelector((state) => state.auth.user?.role);
+  const role = useSelector((state) => state.switch.isSwitched)
+    ? useSelector((state) => state.auth.switchUser?.role)
+    : useSelector((state) => state.auth.user?.role);
   if (!role)
     return (
       <Navigate

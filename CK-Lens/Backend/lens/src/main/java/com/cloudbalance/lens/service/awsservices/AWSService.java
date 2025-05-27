@@ -12,6 +12,6 @@ public interface AWSService {
     List<ASGDTO> fetchAutoScalingGroups(Long accountNumber );
     List<AssignAccountResponse>  fetchLinkedAccounts(Long id);
     List<AssignAccountResponse> fetchAllAccounts();
-    List<AssignAccountResponse>  fetchAccountsByRole();
+    List<AssignAccountResponse>  fetchAccounts(Long userId);
 
 }

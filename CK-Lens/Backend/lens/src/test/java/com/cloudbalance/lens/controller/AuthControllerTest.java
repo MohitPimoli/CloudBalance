@@ -1,5 +1,6 @@
 package com.cloudbalance.lens.controller;
 
+import com.cloudbalance.lens.config.JwtUtil;
 import com.cloudbalance.lens.dto.GlobalMessageDTO;
 import com.cloudbalance.lens.dto.auth.AuthRequestDTO;
 import com.cloudbalance.lens.dto.auth.AuthResponseDTO;
@@ -8,7 +9,6 @@ import com.cloudbalance.lens.utils.Constant;
 import io.jsonwebtoken.ExpiredJwtException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,10 +17,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
-
 import java.util.Map;
-
-import static org.hamcrest.Matchers.containsString;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -35,38 +32,41 @@ class AuthControllerTest {
     @Mock
     private AuthService authService;
 
-    @InjectMocks
+    @Mock
+    private JwtUtil jwtUtil;
+
     private AuthController authController;
 
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
+        authController = new AuthController(authService);
     }
 
     @Test
-    void testLogin() throws Exception {
-        AuthResponseDTO mockResponse =  AuthResponseDTO.builder()
-                .token("access-token")
+    void login_shouldReturnAuthResponseAndSetCookie() throws Exception {
+
+        AuthResponseDTO mockResponse = AuthResponseDTO.builder()
                 .refreshToken("refresh-token")
+                .token("access-token")
                 .build();
 
         when(authService.login(any(AuthRequestDTO.class))).thenReturn(mockResponse);
 
-        String json = """
-            {
-                "email": "user@example.com",
-                "password": "password123"
-            }
-            """;
-
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json))
+                        .content("""
+                                {
+                                    "username": "testuser",
+                                    "password": "password"
+                                }
+                                """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").value("access-token"))
-                .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("refresh-token")));
-
-        verify(authService, times(1)).login(any(AuthRequestDTO.class));
+                .andExpect(cookie().exists("refreshToken"))
+                .andExpect(cookie().httpOnly("refreshToken", true))
+                .andExpect(cookie().secure("refreshToken", true))
+                .andExpect(cookie().path("refreshToken", "/"));
     }
 
     @Test

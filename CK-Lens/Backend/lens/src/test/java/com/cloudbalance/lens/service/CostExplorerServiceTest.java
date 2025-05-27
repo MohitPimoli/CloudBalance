@@ -14,7 +14,6 @@ import com.cloudbalance.lens.utils.SnowflakeRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -30,19 +29,17 @@ class CostExplorerServiceTest {
 
     @Mock
     private SnowflakeRepository snowflakeRepository;
-
     @Mock
     private ColumnNameRepository columnNameRepository;
-
     @Mock
     private AccountRepository accountRepository;
 
-    @InjectMocks
     private CostExplorerServiceImpl costExplorerService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        costExplorerService= new CostExplorerServiceImpl(snowflakeRepository, columnNameRepository, accountRepository);
     }
 
     @Test

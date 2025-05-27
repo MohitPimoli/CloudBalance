@@ -1,6 +1,7 @@
 package com.cloudbalance.lens.controller;
 
 import com.cloudbalance.lens.dto.account.AssignAccountResponse;
+import com.cloudbalance.lens.dto.auth.AuthResponseDTO;
 import com.cloudbalance.lens.dto.pagination.PagedResponse;
 import com.cloudbalance.lens.dto.usermanagement.StatusDTO;
 import com.cloudbalance.lens.dto.usermanagement.UserDTO;
@@ -94,4 +95,33 @@ public class UserManagementController {
     public ResponseEntity<StatusDTO> fetchTotalUserStatus(){
         return ResponseEntity.ok(userManagementService.fetchStatus());
     }
+
+    /**
+     *  switch user
+     *  @param userId the id of the user to switch to
+     *  @return the AuthResponseDTO containing the new access token and refresh token
+     */
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/switch")
+    public ResponseEntity<AuthResponseDTO> switchUser(@RequestParam("userId") Long userId) {
+        return ResponseEntity.ok(userManagementService.switchUser(userId));
+    }
+
+    /**
+     * Fetch all customers
+     * @return List of Users with roleName "CUSTOMER"
+     */
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/all-customers")
+    public ResponseEntity<List<UserDTO>> getAllCustomers() {
+        return ResponseEntity.ok(userManagementService.getAllCustomers());
+    }
+
+
+
+
+
+
 }

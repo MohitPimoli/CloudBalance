@@ -6,6 +6,7 @@ import com.cloudbalance.lens.dto.awsservices.ASGDTO;
 import com.cloudbalance.lens.dto.awsservices.EC2InstanceDTO;
 import com.cloudbalance.lens.dto.awsservices.RDSInstanceDTO;
 import com.cloudbalance.lens.entity.Account;
+import com.cloudbalance.lens.entity.Role;
 import com.cloudbalance.lens.entity.User;
 import com.cloudbalance.lens.exception.CustomException;
 import com.cloudbalance.lens.exception.ResourceNotFoundException;
@@ -15,14 +16,9 @@ import com.cloudbalance.lens.service.awsservices.impl.AWSServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.context.SecurityContextImpl;
 import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
 import software.amazon.awssdk.services.autoscaling.model.AutoScalingGroup;
 import software.amazon.awssdk.services.autoscaling.model.DescribeAutoScalingGroupsResponse;
@@ -46,22 +42,20 @@ class AWSServiceTest {
     @Mock private AwsConfig awsConfig;
     @Mock private UserRepository userRepository;
     @Mock private AccountRepository accountRepository;
-    @InjectMocks private AWSServiceImpl awsService;
+
+    private AWSServiceImpl awsService;
 
     private Account account;
-    private User user;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-
         account = new Account();
+        account.setId(1L);
         account.setAccountNumber(12345L);
         account.setArn("arn:aws:iam::123456789012:role/MyRole");
         account.setAccountRegion("us-west-2");
-        user = new User();
-        user.setId(1L);
-        user.setUsername("testUser");
+        awsService = new AWSServiceImpl(awsConfig, userRepository, accountRepository);
     }
 
     @Test
@@ -71,35 +65,44 @@ class AWSServiceTest {
         Ec2Client ec2Client = mock(Ec2Client.class);
         when(awsConfig.ec2Client(any(), eq("us-west-2"))).thenReturn(ec2Client);
 
-        Reservation reservation = mock(Reservation.class);
         Instance instance = mock(Instance.class);
         when(instance.instanceId()).thenReturn("i-123456");
-        when(instance.state().nameAsString()).thenReturn("running");
-        when(instance.placement().availabilityZone()).thenReturn("us-west-2a");
+
+        InstanceState state = mock(InstanceState.class);
+        when(state.nameAsString()).thenReturn("running");
+        when(instance.state()).thenReturn(state);
+
+        Placement placement = mock(Placement.class);
+        when(placement.availabilityZone()).thenReturn("us-west-2a");
+        when(instance.placement()).thenReturn(placement);
+
         when(instance.tags()).thenReturn(Collections.singletonList(Tag.builder().key("Name").value("TestInstance").build()));
+
+        Reservation reservation = mock(Reservation.class);
         when(reservation.instances()).thenReturn(Collections.singletonList(instance));
 
-        when(ec2Client.describeInstances((DescribeInstancesRequest) any())).thenReturn(mock(DescribeInstancesResponse.class));
-        List<EC2InstanceDTO> instances = awsService.fetchEC2Instances(12345L);
+        DescribeInstancesResponse response = mock(DescribeInstancesResponse.class);
+        when(response.reservations()).thenReturn(Collections.singletonList(reservation));
 
+        when(ec2Client.describeInstances(any(DescribeInstancesRequest.class))).thenReturn(response);
+
+        List<EC2InstanceDTO> instances = awsService.fetchEC2Instances(12345L);
         assertNotNull(instances);
         assertEquals(1, instances.size());
         assertEquals("TestInstance", instances.getFirst().getName());
         assertEquals("i-123456", instances.getFirst().getId());
     }
 
+
     @Test
     void testFetchEC2Instances_AccountNotFound() {
-        when(accountRepository.findByAccountNumber(12345L)).thenReturn(Optional.empty());
-
+        when(accountRepository.findByAccountNumber(any())).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> awsService.fetchEC2Instances(12345L));
     }
 
     @Test
     void testFetchRDSInstances_Success() {
-
         when(accountRepository.findByAccountNumber(12345L)).thenReturn(Optional.of(account));
-
         RdsClient rdsClient = mock(RdsClient.class);
         when(awsConfig.rdsClient(any(), eq("us-west-2"))).thenReturn(rdsClient);
 
@@ -110,7 +113,10 @@ class AWSServiceTest {
         when(dbInstance.availabilityZone()).thenReturn("us-west-2a");
         when(dbInstance.engine()).thenReturn("MySQL");
 
-        when(rdsClient.describeDBInstances()).thenReturn(mock(DescribeDbInstancesResponse.class));
+        DescribeDbInstancesResponse dbInstancesResponse = mock(DescribeDbInstancesResponse.class);
+        when(dbInstancesResponse.dbInstances()).thenReturn(List.of(dbInstance));
+        when(rdsClient.describeDBInstances()).thenReturn(dbInstancesResponse);  // <- wired correctly now
+
         List<RDSInstanceDTO> rdsInstances = awsService.fetchRDSInstances(12345L);
 
         assertNotNull(rdsInstances);
@@ -118,6 +124,7 @@ class AWSServiceTest {
         assertEquals("TestDBInstance", rdsInstances.getFirst().getName());
         assertEquals("available", rdsInstances.getFirst().getStatus());
     }
+
 
     @Test
     void testFetchRDSInstances_AccountNotFound() {
@@ -127,16 +134,20 @@ class AWSServiceTest {
 
     @Test
     void testFetchAutoScalingGroups_Success() {
-
         when(accountRepository.findByAccountNumber(12345L)).thenReturn(Optional.of(account));
+
         AutoScalingClient asgClient = mock(AutoScalingClient.class);
         when(awsConfig.autoScalingClient(any(), eq("us-west-2"))).thenReturn(asgClient);
+
         AutoScalingGroup asg = mock(AutoScalingGroup.class);
         when(asg.autoScalingGroupName()).thenReturn("TestASG");
         when(asg.availabilityZones()).thenReturn(List.of("us-west-2a"));
         when(asg.status()).thenReturn("active");
 
-        when(asgClient.describeAutoScalingGroups()).thenReturn(mock(DescribeAutoScalingGroupsResponse.class));
+        DescribeAutoScalingGroupsResponse response = mock(DescribeAutoScalingGroupsResponse.class);
+        when(response.autoScalingGroups()).thenReturn(List.of(asg));
+        when(asgClient.describeAutoScalingGroups()).thenReturn(response);
+
         List<ASGDTO> asgs = awsService.fetchAutoScalingGroups(12345L);
 
         assertNotNull(asgs);
@@ -144,6 +155,7 @@ class AWSServiceTest {
         assertEquals("TestASG", asgs.getFirst().getName());
         assertEquals("active", asgs.getFirst().getStatus());
     }
+
 
     @Test
     void testFetchAutoScalingGroups_AccountNotFound() {
@@ -154,17 +166,20 @@ class AWSServiceTest {
 
     @Test
     void testFetchAccountsByRole_CustomerRole() {
-        when(userRepository.findByUsername("testUser")).thenReturn(Optional.of(user));
+        User testUser = User.builder()
+                .username("testUser")
+                .id(1L)
+                .role(Role.builder().id(3L).name("CUSTOMER").build())
+                .assignedAccounts(Collections.emptyList())
+                .build();
 
-        Authentication authentication = mock(Authentication.class);
-        when(authentication.getName()).thenReturn("testUser");
-        List<SimpleGrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_CUSTOMER"));
-        doReturn(authorities).when(authentication).getAuthorities();
-        SecurityContextHolder.setContext(new SecurityContextImpl(authentication));
-        List<AssignAccountResponse> accounts = awsService.fetchAccountsByRole();
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+
+        List<AssignAccountResponse> accounts = awsService.fetchAccounts(1L);
         assertNotNull(accounts);
         assertTrue(accounts.isEmpty());
     }
+
 
 
     @Test

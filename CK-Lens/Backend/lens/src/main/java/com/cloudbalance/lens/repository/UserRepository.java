@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -29,6 +30,15 @@ public interface UserRepository extends JpaRepository<User,Long> {
 
     @Query("SELECT u FROM User u WHERE u.username = :username OR u.email = :email")
     List<User> findByUsernameOrEmail(@Param("username") String username, @Param("email") String email);
+
+    /**
+     * Fetch all User by role name "CUSTOMER"
+     * @return List of User entity
+     */
+
+    @Query("SELECT u FROM User u JOIN u.role r WHERE r.name = 'CUSTOMER'")
+    List<User> findAllByRoleName();
+
 
     long countByActiveTrue();
     long countByActiveFalse();

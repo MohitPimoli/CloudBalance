@@ -16,9 +16,13 @@ const collapsedWidth = 60;
 
 const Sidebar = ({ open }) => {
   const navigate = useNavigate();
-  const dashboardPermissions = useSelector(
-    (state) => state.auth.dashboardPermissions
+  const { dashboardPermissions, switchUserPermissions } = useSelector(
+    (state) => state?.auth
   );
+  const isSwitchedByAdmin = useSelector((state) => state?.switch?.isSwitched);
+  const { userDashboardPermissions } = isSwitchedByAdmin
+    ? { userDashboardPermissions: switchUserPermissions }
+    : { userDashboardPermissions: dashboardPermissions };
 
   const handleNavigation = (path) => {
     if (window.location.pathname !== path) {
@@ -27,7 +31,7 @@ const Sidebar = ({ open }) => {
   };
 
   const accessibleTabs = config.tabs.filter((tab) =>
-    dashboardPermissions.some(
+    userDashboardPermissions.some(
       (permission) =>
         permission.dashboard === tab.key &&
         (permission.permissionType === "EDIT" ||

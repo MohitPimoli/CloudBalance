@@ -15,11 +15,11 @@ import com.cloudbalance.lens.repository.RoleRepository;
 import com.cloudbalance.lens.repository.UserCloudAccountRepository;
 import com.cloudbalance.lens.repository.UserRepository;
 import com.cloudbalance.lens.service.usermanagement.impl.UserManagementImpl;
+import com.cloudbalance.lens.utils.DashboardPermissions;
 import com.cloudbalance.lens.utils.PasswordDecryptorUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -40,18 +40,25 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class UserManagementServiceTest {
 
-    @InjectMocks
     private UserManagementImpl userManagement;
 
-    @Mock private UserRepository userRepository;
-    @Mock private AccountRepository accountRepository;
-    @Mock private RoleRepository roleRepository;
-    @Mock private UserCloudAccountRepository userCloudAccountRepository;
-    @Mock private PasswordDecryptorUtil passwordDecryptorUtil;
+    @Mock
+    private UserRepository userRepository;
+    @Mock
+    private AccountRepository accountRepository;
+    @Mock
+    private RoleRepository roleRepository;
+    @Mock
+    private UserCloudAccountRepository userCloudAccountRepository;
+    @Mock
+    private PasswordDecryptorUtil passwordDecryptorUtil;
+    @Mock
+    private DashboardPermissions dashboardPermissions;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        userManagement = new UserManagementImpl(userRepository, accountRepository, roleRepository, userCloudAccountRepository, passwordDecryptorUtil,dashboardPermissions);
     }
 
     @Test
@@ -70,9 +77,11 @@ class UserManagementServiceTest {
                 .accountIds(List.of(1L, 2L))
                 .build();
 
-        when(userRepository.findByUsernameOrEmail("john", "john@example.com")).thenReturn(Collections.emptyList());
-        when(roleRepository.findRoleIdByRoleName("CUSTOMER")).thenReturn(Optional.of(Role.builder().name("CUSTOMER").id(1L).build()));
-        when(passwordDecryptorUtil.decryptPassword("encryptedPass")).thenReturn("plainPass");
+        when(userRepository.findByUsernameOrEmail(any(), any())).thenReturn(Collections.emptyList());
+        when(roleRepository.findRoleIdByRoleName(any())).thenReturn(Optional.of(Role.builder().name("abc").id(3L).build()));
+
+
+        when(passwordDecryptorUtil.decryptPassword(any())).thenReturn("plainPass");
         when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArguments()[0]);
         when(accountRepository.findById(anyLong())).thenReturn(Optional.of(Account.builder().id(1L).build()));
         String result = userManagement.registerUser(dto);
@@ -89,7 +98,7 @@ class UserManagementServiceTest {
 
         UserManagementDTO dto = UserManagementDTO.builder().userDTO(userDTO).build();
 
-        when(userRepository.findByUsernameOrEmail("john", "john@example.com")).thenReturn(List.of(new User()));
+        when(userRepository.findByUsernameOrEmail(any(), any())).thenReturn(List.of(new User()));
 
         assertThatThrownBy(() -> userManagement.registerUser(dto))
                 .isInstanceOf(ResourceAlreadyExistsException.class);
@@ -106,23 +115,39 @@ class UserManagementServiceTest {
                 .roleName("CUSTOMER")
                 .build();
 
+        Account account1 = Account.builder()
+                .id(1L)
+                .accountNumber(123456L)
+                .accountHolderName("John")
+                .build();
+
+        Account account2 = Account.builder()
+                .id(2L)
+                .accountNumber(12345L)
+                .accountHolderName("John")
+                .build();
+
         UserManagementDTO dto = UserManagementDTO.builder()
                 .userDTO(userDTO)
                 .accountIds(List.of(1L, 2L))
                 .build();
 
-        User existingUser = User.builder()
-                .id(1L)
-                .role(Role.builder().name("CUSTOMER").id(1L).build())
-                .assignedAccounts(new ArrayList<>())
+        Role role = Role.builder()
+                .name("CUSTOMER")
+                .id(3L)
                 .build();
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(existingUser));
-        when(roleRepository.findRoleIdByRoleName("CUSTOMER")).thenReturn(Optional.of(Role.builder().name("CUSTOMER").id(1L).build()));
-        when(passwordDecryptorUtil.decryptPassword("enc")).thenReturn("pass");
-
+        User existingUser = User.builder()
+                .id(1L)
+                .role(role)
+                .assignedAccounts(new ArrayList<>())
+                .build();
+        when(userRepository.findById(any())).thenReturn(Optional.of(existingUser));
+        when(roleRepository.findRoleIdByRoleName(any())).thenReturn(Optional.of(role));
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(account1));
+        when(accountRepository.findById(2L)).thenReturn(Optional.of(account2));
+        when(passwordDecryptorUtil.decryptPassword(any())).thenReturn("pass");
         String result = userManagement.updateUser(dto);
-
         assertThat(result).isEqualTo("User details updated successfully");
         verify(userRepository).save(any(User.class));
     }

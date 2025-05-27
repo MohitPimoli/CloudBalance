@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   AppBar,
   Toolbar,
@@ -18,15 +18,28 @@ import { toggleSidebar } from "../../redux/actions/sidebarAction";
 import { persistor } from "../../redux/store";
 import { UsersRound, LogOut } from "lucide-react";
 import { logoutUser } from "../../services/authServiceApis";
+import SwitchUserButton from "../utils/SwitchUserButton";
+import ClickAwayListener from "@mui/material/ClickAwayListener";
 
 const Header = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
   const open = useSelector((state) => state.sidebar.open);
+  const role = useSelector((state) => state.auth.user.role);
+  const isAdmin = role === "ADMIN" ? true : false;
+  const [anchorEl, setAnchorEl] = useState(null);
 
   const handleToggle = () => {
     dispatch(toggleSidebar());
+  };
+
+  const handleClick = (event) => {
+    setAnchorEl(anchorEl ? null : event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
   };
 
   const handleLogout = async () => {
@@ -90,33 +103,42 @@ const Header = () => {
             alignItems="center"
             sx={{ marginLeft: "auto" }}
           >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1.5,
-                p: 1,
-              }}
-            >
-              <IconButton sx={{ p: 1, border: "1px solid #4398d7" }}>
-                <UsersRound color="#4398d7" />
-              </IconButton>
+            <ClickAwayListener onClickAway={handleClose}>
+              <Box
+                sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1 }}
+              >
+                <IconButton
+                  sx={{ p: 1, border: "1px solid #4398d7" }}
+                  onClick={handleClick}
+                >
+                  <UsersRound color="#4398d7" />
+                </IconButton>
 
-              <Box>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ fontWeight: "bold", color: "text.secondary" }}
-                >
-                  Welcome!
-                </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{ color: "#4398d7" }}
-                >
-                  {user.username}
-                </Typography>
+                <Box>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ fontWeight: "bold", color: "text.secondary" }}
+                  >
+                    Welcome!
+                  </Typography>
+                  <Typography
+                    variant="body1"
+                    sx={{ color: "#4398d7" }}
+                  >
+                    {user.username}
+                  </Typography>
+                </Box>
+                {isAdmin ? (
+                  <SwitchUserButton
+                    anchorEl={anchorEl}
+                    onClose={handleClose}
+                  />
+                ) : (
+                  <></>
+                )}
               </Box>
-            </Box>
+            </ClickAwayListener>
+
             <Box
               sx={{ borderRight: "1px solid lightgray", height: "40px", mr: 2 }}
             />

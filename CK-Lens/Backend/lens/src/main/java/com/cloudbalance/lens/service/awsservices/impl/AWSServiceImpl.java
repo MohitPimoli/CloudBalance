@@ -16,9 +16,6 @@ import com.cloudbalance.lens.repository.UserRepository;
 import com.cloudbalance.lens.service.awsservices.AWSService;
 import com.cloudbalance.lens.utils.Constant;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
@@ -146,22 +143,12 @@ public class AWSServiceImpl implements AWSService {
     }
 
     @Override
-    public List<AssignAccountResponse> fetchAccountsByRole() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-        List<String> roles = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .toList();
-
-        boolean isCustomer = roles.contains("ROLE_CUSTOMER");
-
-        if (isCustomer) {
-            User user = userRepository.findByUsername(username).orElseThrow(() -> {
-                log.warn("User not found with username: {}", username);
-                return new CustomException.UserNotFoundException(Constant.USER_NOT_FOUND_WITH_USERNAME + username);
-            });
+    public List<AssignAccountResponse> fetchAccounts(Long userId) {
+        log.info("Fetching accounts for userId: {}", userId);
+        User user = userRepository.findById(userId).orElseThrow(()->
+                new CustomException.UserNotFoundException(Constant.USER_NOT_FOUND_WITH_ID + userId));
+        if (user.getRole().getName().equals("CUSTOMER")) {
             return fetchLinkedAccounts(user.getId());
-
         } else {
             return fetchAllAccounts();
         }

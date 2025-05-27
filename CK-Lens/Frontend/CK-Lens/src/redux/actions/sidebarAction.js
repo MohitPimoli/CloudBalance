@@ -1,4 +1,3 @@
-// src/store/sidebar/sidebarActions.js
 export const TOGGLE_SIDEBAR = "sidebar/toggleSidebar";
 export const SET_SIDEBAR_OPEN = "sidebar/setSidebarOpen";
 

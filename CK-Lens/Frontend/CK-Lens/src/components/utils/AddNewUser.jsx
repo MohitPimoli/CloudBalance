@@ -16,6 +16,8 @@ import {
 import { useForm, Controller } from "react-hook-form";
 import AccountIdAssociation from "../utils/AccountSelectBox";
 import FormConfig from "../../config/FormConfig";
+
+import { useSelector } from "react-redux";
 import {
   getUserById,
   registerUser,
@@ -28,6 +30,7 @@ const AddNewUser = () => {
   const { userId } = useParams();
   const isEditMode = !!userId;
   const typo = isEditMode ? "Update User" : "Add New User";
+  const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   const addUserFormConfig = FormConfig(isEditMode);
   const [snackbar, setSnackbar] = useState({
@@ -63,6 +66,10 @@ const AddNewUser = () => {
     getUserById(userId)
       .then((res) => {
         const userData = res.data;
+        if (userData.roleName === "ADMIN" && userData.id === user.id) {
+          navigate("/");
+          return;
+        }
         if (userData) {
           reset({
             firstName: userData.firstName || "",
@@ -257,7 +264,7 @@ const AddNewUser = () => {
               </Grid>
             ))}
           </Grid>
-          <Box/>
+          <Box />
           {selectedRole === "CUSTOMER" && (
             <AccountIdAssociation
               userid={isEditMode ? userId : null}
@@ -267,7 +274,7 @@ const AddNewUser = () => {
           )}
           <Grid
             textAlign="right"
-            size={{ xs: 12}}
+            size={{ xs: 12 }}
           >
             <Button
               variant="contained"
